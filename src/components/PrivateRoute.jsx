@@ -15,5 +15,7 @@ export default function PrivateRoute({ children, roleRequired }) {
     return <Navigate to="/" />;
   }
 
+  if (!userData) return <p>Loading...</p>;
+  
   return children;
 }
