@@ -1,3 +1,4 @@
+// src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -10,13 +11,11 @@ import ActivityLogs from './pages/ActivityLogs';
 import RecordsPage from './pages/RecordsPage';
 import TrashedRecords from './pages/TrashedRecords';
 import Logout from './pages/Logout';
+import RecordDetails from './pages/RecordDetails';
 
-
-// Protected route wrapper
-import PrivateRoute from './components/PrivateRoute';
-
-// Navbar
+// Components
 import Navbar from './components/Navbar';
+import PrivateRoute from './components/PrivateRoute';
 
 export default function App() {
   return (
@@ -29,8 +28,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/logout" element={<Logout />} />
+        <Route path="/records/:id" element={<RecordDetails />} /> {/* Public View */}
 
-        {/* Librarian-only routes */}
+        {/* Librarian routes */}
         <Route
           path="/records"
           element={
@@ -48,7 +48,7 @@ export default function App() {
           }
         />
 
-        {/* Admin-only routes */}
+        {/* Admin routes */}
         <Route
           path="/admin"
           element={
@@ -65,15 +65,6 @@ export default function App() {
             </PrivateRoute>
           }
         />
-        <Route 
-          path="/records/:id" 
-          element={
-            <PrivateRoute roleRequired="librarian">
-              <RecordDetails />
-            </PrivateRoute>
-          } 
-        />
-
       </Routes>
     </Router>
   );

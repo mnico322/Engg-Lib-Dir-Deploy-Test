@@ -1,81 +1,94 @@
+// src/pages/Login.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebaseConfig';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
 
-  const { setUserData } = useAuth(); // optional: if you're storing user data in context
-  const navigate = useNavigate();
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-
     try {
-      // Sign in
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const userCred = await signInWithEmailAndPassword(auth, form.email, form.password);
+      const user = userCred.user;
 
-      // Get role from Firestore
-      const docRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(docRef);
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.data();
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        setUserData?.(userData); // if using context
+      if (!userData?.approved) {
+        setError('Your account is not yet approved.');
+        return;
+      }
 
-        // Redirect by role
-        if (userData.role === 'admin') {
-          navigate('/admin');
-        } else if (userData.role === 'librarian') {
-          navigate('/records');
-        } else {
-          navigate('/');
-        }
+      login(userData); // Sets context
+      if (userData.role === 'admin') {
+        navigate('/admin');
+      } else if (userData.role === 'librarian') {
+        navigate('/records');
       } else {
-        setError('User data not found.');
+        navigate('/');
       }
     } catch (err) {
       console.error(err);
-      setError('Login failed. Please check your credentials.');
+      setError('Invalid email or password.');
     }
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Login</h2>
-      <form onSubmit={handleLogin} style={{ maxWidth: '400px' }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Email:</label><br />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%' }}
-          />
-        </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Password:</label><br />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%' }}
-          />
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center text-indigo-600 mb-6">Login to Your Account</h2>
 
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p className="text-red-600 mb-4 text-sm text-center">{error}</p>}
 
-        <button type="submit">Login</button>
-      </form>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1 text-gray-700">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              required
+              value={form.email}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium mb-1 text-gray-700">
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              required
+              value={form.password}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition"
+          >
+            Login
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

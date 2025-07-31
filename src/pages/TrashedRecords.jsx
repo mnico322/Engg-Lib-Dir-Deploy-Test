@@ -1,172 +1,144 @@
+// src/pages/TrashedRecords.jsx
 import React, { useEffect, useState } from 'react';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import {
-  collection,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp
-} from 'firebase/firestore';
-import { useAuth } from '../AuthContext';
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
+import { Link } from 'react-router-dom';
 
 export default function TrashedRecords() {
-  const { userData } = useAuth();
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
 
+  const fetchTrashedRecords = async () => {
+    const querySnapshot = await getDocs(collection(db, 'records'));
+    const trashed = querySnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(
+        rec =>
+          rec.status === 'trashed' &&
+          (!rec.trashedAt || rec.trashedAt.toDate() < new Date(new Date().getTime() + 30 * 86400000))
+      );
+    setRecords(trashed);
+  };
+
   useEffect(() => {
-    const fetchTrashed = async () => {
-      const snapshot = await getDocs(collection(db, 'records'));
-      const now = new Date();
-
-      const cleanedRecords = [];
-
-      for (const d of snapshot.docs) {
-        const data = d.data();
-        if (data.status === 'trashed') {
-          const createdAt = data.createdAt?.toDate?.() || new Date();
-          const diffDays = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
-
-          if (diffDays >= 30) {
-            await deleteDoc(doc(db, 'records', d.id)); // auto-delete after 30 days
-            continue;
-          }
-
-          cleanedRecords.push({ id: d.id, ...data });
-        }
-      }
-
-      setRecords(cleanedRecords);
-    };
-
-    fetchTrashed();
+    fetchTrashedRecords();
   }, []);
 
-  const handleRestore = async (id) => {
-    await updateDoc(doc(db, 'records', id), { status: 'active' });
-    setRecords(prev => prev.filter(r => r.id !== id));
+  // Auto-delete records older than 30 days
+  useEffect(() => {
+    const deleteOldRecords = async () => {
+      const now = new Date();
+      for (const rec of records) {
+        if (rec.trashedAt && rec.trashedAt.toDate() <= new Date(now.getTime() - 30 * 86400000)) {
+          await deleteDoc(doc(db, 'records', rec.id));
+        }
+      }
+    };
+    deleteOldRecords();
+  }, [records]);
+
+  const handleExport = () => {
+    const data = records.map(rec => ({
+      Title: rec.title,
+      'Material Type': rec.materialType,
+      'Date Created': rec.dateCreated?.toDate().toLocaleDateString(),
+      'Date Encoded': rec.dateEncoded?.toDate().toLocaleDateString(),
+      Creator: rec.creator,
+      Status: rec.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Trashed Records');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const fileData = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    saveAs(fileData, 'trashed_records.xlsx');
   };
 
-  const handlePermanentDelete = async (id) => {
-    const confirm = window.confirm('Are you sure you want to permanently delete this record? This cannot be undone.');
-    if (!confirm) return;
-
-    await deleteDoc(doc(db, 'records', id));
-    setRecords(prev => prev.filter(r => r.id !== id));
-  };
-
-  const exportToCSV = () => {
-    const headers = [
-      "Title", "Access Code", "Material Type", "Creator", "Provenance", "Created By", "Date Created"
-    ];
-
-    const rows = records.map(record => [
-      record.title,
-      record.accessCode,
-      record.materialType,
-      record.creator,
-      record.provenance,
-      record.createdBy,
-      record.dateCreated
-    ]);
-
-    const csvContent =
-      [headers, ...rows]
-        .map(e => e.map(v => `"${v || ''}"`).join(","))
-        .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", "trashed_records.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  if (userData?.role !== 'librarian') {
-    return <p>You do not have permission to view trashed records.</p>;
-  }
-
-  const filteredRecords = records.filter(record =>
-    (
-      record.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.accessCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.creator?.toLowerCase().includes(searchTerm.toLowerCase())
-    ) &&
-    (filterType === '' || record.materialType === filterType)
+  const filtered = records.filter(rec =>
+    rec.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (filterType === '' || rec.materialType === filterType)
   );
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Trashed Records</h2>
+    <div className="max-w-6xl mx-auto p-6">
+      <h2 className="text-2xl font-bold mb-6 text-red-600">🗑️ Trashed Records</h2>
 
-      {/* Search and Filter */}
-      <div style={{ marginBottom: '1rem' }}>
+      {/* Search and filter */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
         <input
           type="text"
-          placeholder="Search by title, access code, or creator..."
+          placeholder="Search by title..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ marginRight: '10px' }}
+          className="px-4 py-2 border rounded w-full sm:w-1/2"
         />
-
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-          <option value="">All Material Types</option>
-          <option value="College Executive Board (CEB)">College Executive Board (CEB)</option>
-          <option value="College Academic Personnel Committee (CAPC)">College Academic Personnel Committee (CAPC)</option>
-          <option value="Graduate Faculty Council">Graduate Faculty Council</option>
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          className="px-3 py-2 border rounded"
+        >
+          <option value="">All Types</option>
+          <option value="College Executive Board (CEB)">CEB</option>
+          <option value="College Academic Personnel Committee (CAPC)">CAPC</option>
+          <option value="Graduate Faculty Council">GFC</option>
           <option value="Others">Others</option>
         </select>
+      </div>
 
-        <button onClick={exportToCSV} style={{ marginLeft: '10px' }}>
-          Export to CSV
+      <div className="mb-4">
+        <button
+          onClick={handleExport}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          ⬇ Export to Excel
         </button>
       </div>
 
-      {/* Table */}
-      {filteredRecords.length === 0 ? (
-        <p>No trashed records found.</p>
-      ) : (
-        <table border="1" cellPadding="8">
-          <thead>
+      <div className="overflow-x-auto bg-white rounded shadow">
+        <table className="min-w-full text-sm divide-y divide-gray-200">
+          <thead className="bg-gray-100 text-left font-semibold text-gray-700">
             <tr>
-              <th>Title</th>
-              <th>Access Code</th>
-              <th>Material Type</th>
-              <th>Creator</th>
-              <th>Provenance</th>
-              <th>Created By</th>
-              <th>Date Created</th>
-              <th>Actions</th>
+              <th className="px-4 py-2">Title</th>
+              <th className="px-4 py-2">Material Type</th>
+              <th className="px-4 py-2">Trashed At</th>
+              <th className="px-4 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredRecords.map(record => (
-              <tr key={record.id}>
-                <td>{record.title}</td>
-                <td>{record.accessCode}</td>
-                <td>{record.materialType}</td>
-                <td>{record.creator}</td>
-                <td>{record.provenance}</td>
-                <td>{record.createdBy}</td>
-                <td>{record.dateCreated}</td>
-                <td>
-                  <button onClick={() => handleRestore(record.id)}>Restore</button>
-                  <button
-                    onClick={() => handlePermanentDelete(record.id)}
-                    style={{ color: 'red', marginLeft: '10px' }}
-                  >
-                    Delete Forever
-                  </button>
+            {filtered.length > 0 ? (
+              filtered.map(record => (
+                <tr key={record.id} className="hover:bg-gray-50 border-t">
+                  <td className="px-4 py-2">{record.title}</td>
+                  <td className="px-4 py-2">{record.materialType}</td>
+                  <td className="px-4 py-2">
+                    {record.trashedAt?.toDate().toLocaleDateString() || 'N/A'}
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <Link
+                      to={`/records/${record.id}`}
+                      state={{ from: '/trash' }}
+                      className="text-blue-600 hover:underline"
+                    >
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-center px-4 py-6 text-gray-500">
+                  No trashed records found.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
-      )}
+      </div>
     </div>
   );
 }
