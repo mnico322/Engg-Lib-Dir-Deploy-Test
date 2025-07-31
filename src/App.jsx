@@ -11,6 +11,7 @@ import RecordsPage from './pages/RecordsPage';
 import TrashedRecords from './pages/TrashedRecords';
 import Logout from './pages/Logout';
 
+
 // Protected route wrapper
 import PrivateRoute from './components/PrivateRoute';
 
@@ -64,6 +65,15 @@ export default function App() {
             </PrivateRoute>
           }
         />
+        <Route 
+          path="/records/:id" 
+          element={
+            <PrivateRoute roleRequired="librarian">
+              <RecordDetails />
+            </PrivateRoute>
+          } 
+        />
+
       </Routes>
     </Router>
   );
