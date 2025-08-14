@@ -66,7 +66,7 @@ export default function TrashedRecords() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6 text-red-600">🗑️ Trashed Records</h2>
+      <h2 className="text-2xl font-bold mb-6 text-black"> Trashed Records</h2>
 
       {/* Search and filter */}
       <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">

@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
+import { toast } from 'react-toastify';
 
 const AuthContext = React.createContext();
 
@@ -11,8 +12,8 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null); // Firebase user
-  const [userData, setUserData] = useState(null);       // Firestore user info
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export function AuthProvider({ children }) {
             });
           }
         } catch (err) {
+          toast.error('Failed to fetch user data');
           console.error('Error fetching user data:', err);
           setUserData({
             role: 'guest',
@@ -54,9 +56,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = async () => {
-    await signOut(auth);
-    setCurrentUser(null);
-    setUserData(null);
+    try {
+      await signOut(auth);
+      setCurrentUser(null);
+      setUserData(null);
+      toast.success('Successfully logged out');
+    } catch (err) {
+      toast.error('Logout failed');
+      console.error('Logout error:', err);
+    }
   };
 
   const value = {

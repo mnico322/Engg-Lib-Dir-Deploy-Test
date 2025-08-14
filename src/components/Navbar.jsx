@@ -1,13 +1,13 @@
-// src/components/Navbar.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
 export default function Navbar() {
-  const { user, userData, logout } = useAuth();
+  const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -15,51 +15,91 @@ export default function Navbar() {
     navigate('/');
   };
 
+  const hoverClass = `
+    border-b-2 border-transparent
+    hover:border-white
+    hover:bg-white
+    hover:text-[#ff8400]
+    transition-colors duration-200
+    px-2 py-1 rounded
+  `;
+
   return (
-    <nav className="bg-indigo-600 text-white px-4 py-3 shadow">
+    <nav className="bg-[#ff8400] text-white px-4 py-3 shadow">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Left: Site Title or Logo */}
-        <Link to="/" className="text-xl font-semibold tracking-wide hover:underline">
-          Records System
-        </Link>
+        {/* Left: Site Title */}
+        <div className="text-xl font-semibold tracking-wide select-none">
+          Digital Institutional Repository
+        </div>
 
         {/* Center: Navigation Links */}
-        <div className="space-x-4">
-          <Link to="/" className="hover:underline">Home</Link>
+        <div className="space-x-4 flex items-center">
+          <Link to="/" className={hoverClass}>
+            Home
+          </Link>
 
           {userData?.role === 'librarian' && (
             <>
-              <Link to="/records" className="hover:underline">Records</Link>
-              <Link to="/trash" className="hover:underline">Trash</Link>
+              <Link to="/records" className={hoverClass}>
+                Records
+              </Link>
+              <Link to="/trash" className={hoverClass}>
+                Trash
+              </Link>
             </>
           )}
 
           {userData?.role === 'admin' && (
             <>
-              <Link to="/admin" className="hover:underline">Admin</Link>
-              <Link to="/logs" className="hover:underline">Logs</Link>
+              <Link to="/admin" className={hoverClass}>
+                Admin Dashboard
+              </Link>
+              <Link to="/logs" className={hoverClass}>
+                Logs
+              </Link>
             </>
           )}
         </div>
 
         {/* Right: Auth Controls */}
-        <div className="space-x-4 flex items-center">
-          {user ? (
+        <div className="space-x-4 flex items-center relative">
+          {currentUser ? (
             <>
-              <span className="text-sm hidden sm:inline">
-                👤 {userData?.displayName || user.email}
-              </span>
+              {/* Username clickable + tooltip */}
+              <div
+                className="relative hidden sm:inline-block"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                <Link
+                  to="/profile"
+                  className="text-sm hover:underline flex items-center gap-1"
+                >
+                  👤 {userData?.displayName || currentUser.email}
+                </Link>
+
+                {showTooltip && (
+                  <div className="absolute top-[110%] left-1/2 transform -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap z-50 shadow">
+                    View Profile
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={handleLogout}
-                className="bg-white text-indigo-600 px-3 py-1 rounded hover:bg-gray-100 text-sm"
+                className={`bg-white text-[#ff8400] px-3 py-1 rounded text-sm ${hoverClass}`}
               >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="hover:underline">Login</Link>
-              <Link to="/register" className="hover:underline">Register</Link>
+              <Link to="/login" className={hoverClass}>
+                Login
+              </Link>
+              <Link to="/register" className={hoverClass}>
+                Register
+              </Link>
             </>
           )}
         </div>
