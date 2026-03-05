@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
-import { auth, db } from '../firebaseConfig';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
-  const [form, setForm] = useState({ displayName: '', email: '', password: '', confirmPassword: '' });
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { register } = useAuth();
+
+  const [form, setForm] = useState({
+    displayName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [loading, setLoading] = useState(false); // Added loading state for UX
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -16,123 +23,130 @@ export default function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
-
-    // Email domain check
-    if (!form.email.endsWith('@up.edu.ph')) {
+    setError("");
+    
+    // 1. Basic Validation
+    if (!form.email.endsWith("@up.edu.ph")) {
       setError('Email must end with "@up.edu.ph"');
       return;
     }
 
-    // Password match check
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.');
+      setError("Passwords do not match.");
       return;
     }
 
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const userCred = await createUserWithEmailAndPassword(auth, form.email, form.password);
+      // 2. Call the register function from AuthContext
+      await register(form.displayName, form.email, form.password);
 
-      // Set display name in Firebase Auth
-      await updateProfile(userCred.user, {
-        displayName: form.displayName
+      // 3. Success handling
+      toast.success("Account registered! Please wait for admin approval.", {
+        duration: 5000,
       });
-
-      // Save user in Firestore
-      await setDoc(doc(db, 'users', userCred.user.uid), {
-        uid: userCred.user.uid,
-        email: form.email,
-        displayName: form.displayName,
-        role: 'guest', // Default role
-        approved: false,
-      });
-
-      toast.success('Account registered! Please wait for approval.');
-      navigate('/login');
+      navigate("/login");
     } catch (err) {
-      console.error(err);
-      setError('Failed to register. Please check your details.');
-      toast.error('Failed to register. Please try again.');
+      // 4. Enhanced Error Handling
+      // This pulls the "Email already registered" or other messages from your Express routes
+      const serverMessage = err.response?.data?.message || "Registration failed. Please try again.";
+      console.error("Registration Error:", serverMessage);
+      setError(serverMessage);
+      toast.error(serverMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center text-black mb-6">Create an Account</h2>
+        <h2 className="text-2xl font-bold text-center mb-2">Create an Account</h2>
+        <p className="text-gray-500 text-sm text-center mb-6">Library Archive System</p>
 
-        {error && <p className="text-red-600 mb-4 text-sm text-center">{error}</p>}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleRegister} className="space-y-4">
-          {/* Display Name */}
           <div>
-            <label htmlFor="displayName" className="block text-sm font-medium mb-1 text-gray-700">
-              Display Name
-            </label>
+            <label className="block text-sm font-medium mb-1 text-gray-700">Display Name</label>
             <input
               type="text"
               name="displayName"
+              required
               value={form.displayName}
               onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-[#ff8400] focus:outline-none"
+              placeholder="Full Name"
+              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#ff8400] outline-none transition-all"
             />
           </div>
 
-          {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1 text-gray-700">
-              Email
-            </label>
+            <label className="block text-sm font-medium mb-1 text-gray-700">Email Address</label>
             <input
               type="email"
               name="email"
+              required
+              placeholder="username@up.edu.ph"
               value={form.email}
               onChange={handleChange}
-              required
-              placeholder="example@up.edu.ph"
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-[#ff8400] focus:outline-none"
+              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#ff8400] outline-none transition-all"
             />
           </div>
 
-          {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1 text-gray-700">
-              Password
-            </label>
+            <label className="block text-sm font-medium mb-1 text-gray-700">Password</label>
             <input
               type="password"
               name="password"
+              required
               value={form.password}
               onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-[#ff8400] focus:outline-none"
+              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#ff8400] outline-none transition-all"
             />
           </div>
 
-          {/* Confirm Password */}
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1 text-gray-700">
-              Confirm Password
-            </label>
+            <label className="block text-sm font-medium mb-1 text-gray-700">Confirm Password</label>
             <input
               type="password"
               name="confirmPassword"
+              required
               value={form.confirmPassword}
               onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-[#ff8400] focus:outline-none"
+              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#ff8400] outline-none transition-all"
             />
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-[#ff8400] text-white py-2 px-4 rounded hover:bg-[#FF9D33] transition"
+            disabled={loading}
+            className={`w-full text-white py-2 rounded font-semibold transition-colors ${
+              loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#ff8400] hover:bg-[#FF9D33]"
+            }`}
           >
-            Register
+            {loading ? "Creating Account..." : "Register"}
           </button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <span 
+            onClick={() => navigate("/login")} 
+            className="text-[#ff8400] cursor-pointer hover:underline font-medium"
+          >
+            Log in
+          </span>
+        </p>
       </div>
     </div>
   );

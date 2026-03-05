@@ -1,196 +1,232 @@
 // src/pages/RecordDetails.jsx
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { fieldConfig } from "../config/fieldConfig";
+import toast from "react-hot-toast";
 
 export default function RecordDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { userData, currentUser } = useAuth();
+  const { userData } = useAuth();
 
   const [record, setRecord] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  const role = userData?.role || "guest";
+  const isEditable = role === "librarian" || role === "admin";
+
+  // ✅ Fetch record from MySQL backend
   useEffect(() => {
     const fetchRecord = async () => {
-      const docRef = doc(db, 'records', id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setRecord({
-          ...data,
-          dateCreated: data.dateCreated?.seconds
-            ? new Date(data.dateCreated.seconds * 1000).toISOString().split('T')[0]
-            : '',
-        });
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/records/${id}`,
+          { withCredentials: true }
+        );
+
+        // In MySQL backend, sometimes response is { record: {...} }
+        const data = res.data?.record || res.data;
+
+        if (!data) {
+          toast.error("Record not found");
+          navigate("/records");
+          return;
+        }
+
+        setRecord(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load record");
+        navigate("/records");
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchRecord();
-  }, [id]);
+  }, [id, navigate]);
 
-  const handleChange = (e) => {
-    setRecord({ ...record, [e.target.name]: e.target.value });
-  };
+  if (loading) {
+    return <div className="p-6 text-gray-600">Loading...</div>;
+  }
 
+  if (!record) {
+    return null;
+  }
+
+  // ✅ Update record
   const handleUpdate = async () => {
     try {
-      const docRef = doc(db, 'records', id);
-      await updateDoc(docRef, {
-        ...record,
-        dateCreated: new Date(record.dateCreated),
-        updatedAt: new Date(),
-      });
+      await axios.put(
+        `http://localhost:5000/api/records/${id}`,
+        record,
+        { withCredentials: true }
+      );
 
-      await addDoc(collection(db, 'logs'), {
-        action: 'update',
-        recordId: id,
-        updatedBy: currentUser?.email || 'unknown',
-        timestamp: new Date(),
-      });
-
+      toast.success("Record updated successfully");
       setEditMode(false);
-      toast.success('Record updated successfully.');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to update record.');
+      toast.error("Failed to update record");
     }
   };
 
+  // ✅ Soft delete (MySQL usually uses is_deleted = 1)
   const handleDelete = async () => {
     try {
-      const docRef = doc(db, 'records', id);
-      await updateDoc(docRef, {
-        status: 'trashed',
-        trashedAt: new Date(),
-      });
+      await axios.delete(
+        `http://localhost:5000/api/records/${id}`,
+        { withCredentials: true }
+      );
 
-      await addDoc(collection(db, 'logs'), {
-        action: 'delete',
-        recordId: id,
-        deletedBy: currentUser?.email || 'unknown',
-        timestamp: new Date(),
-      });
-
-      toast.success('Record moved to trash.');
-      navigate('/records');
+      toast.success("Record moved to trash");
+      navigate("/records");
     } catch (err) {
       console.error(err);
-      toast.error('Failed to delete record.');
+      toast.error("Failed to delete record");
     }
   };
 
-  if (!record) return <div className="p-6 text-gray-600">Loading...</div>;
+  const handleChange = (e) => {
+    setRecord((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
-  const isEditable = userData?.role === 'librarian';
+  // ✅ Dynamic dropdowns (safe optional chaining)
+  const currentFields = (() => {
+    if (!record?.community) return [];
+
+    if (record.subSubCollection) {
+      return (
+        fieldConfig[record.community]
+          ?.collections?.[record.collection]
+          ?.subCollections?.[record.subCollection]
+          ?.subSubCollections?.[record.subSubCollection] || []
+      );
+    }
+
+    if (record.subCollection) {
+      return (
+        fieldConfig[record.community]
+          ?.collections?.[record.collection]
+          ?.subCollections?.[record.subCollection] || []
+      );
+    }
+
+    if (record.collection) {
+      return (
+        fieldConfig[record.community]
+          ?.collections?.[record.collection] || []
+      );
+    }
+
+    return [];
+  })();
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
-      {/* Breadcrumb */}
-      <div className="text-sm text-gray-600 mb-4">
-        <Link to="/records" className="text-blue-600 hover:underline">← Back to Records</Link>
-      </div>
+      <Link to="/records" className="text-blue-600 hover:underline text-sm">
+        ← Back to Records
+      </Link>
 
-      <h2 className="text-2xl font-bold mb-4 text-accent">📄 Record Details</h2>
+      <h2 className="text-2xl font-bold my-6">Record Details</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {[
-          { label: 'Access Code', name: 'accessCode' },
-          { label: 'Location Code', name: 'locationCode' },
-          { label: 'Box No', name: 'boxNo' },
-          { label: 'Creator/Author', name: 'creator' },
-          { label: 'Provenance', name: 'provenance' },
-          { label: 'Date Created', name: 'dateCreated', type: 'date' },
-          { label: 'Title', name: 'title' },
-          {
-            label: 'Material Type',
-            name: 'materialType',
-            type: 'select',
-            options: ['College Executive Board (CEB)', 'College Academic Personnel Committee (CAPC)', 'Graduate Faculty Council', 'Others'],
-          },
-          { label: 'Physical Description', name: 'physicalDescription' },
-          { label: 'Content Description', name: 'contentDescription' },
-        ].map(field => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {currentFields.map((field) => (
           <div key={field.name}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+            <label className="block text-sm font-medium mb-1">
+              {field.label}
+            </label>
+
             {editMode && isEditable ? (
-              field.type === 'select' ? (
+              field.type === "textarea" ? (
+                <textarea
+                  name={field.name}
+                  value={record[field.name] || ""}
+                  onChange={handleChange}
+                  className="w-full border p-2 rounded"
+                />
+              ) : field.type === "select" ? (
                 <select
                   name={field.name}
-                  value={record[field.name]}
+                  value={record[field.name] || ""}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
+                  className="w-full border p-2 rounded"
                 >
-                  <option value="">Select</option>
-                  {field.options.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
+                  <option value="">Select...</option>
+                  {field.options?.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
                   ))}
                 </select>
               ) : (
                 <input
-                  type={field.type || 'text'}
+                  type="text"
                   name={field.name}
-                  value={record[field.name]}
+                  value={record[field.name] || ""}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
+                  className="w-full border p-2 rounded"
                 />
               )
             ) : (
-              <div className="text-gray-800 bg-gray-100 px-3 py-2 rounded">{record[field.name] || '—'}</div>
+              <div className="bg-gray-100 p-2 rounded">
+                {record[field.name] || "—"}
+              </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* Actions */}
       {isEditable && (
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between mt-6">
           {!editMode ? (
             <button
               onClick={() => setEditMode(true)}
-              className="bg-[#ff8400] text-white px-4 py-2 rounded hover:brightness-110"
+              className="bg-orange-500 text-white px-4 py-2 rounded"
             >
               Edit
             </button>
           ) : (
             <button
               onClick={handleUpdate}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              className="bg-green-600 text-white px-4 py-2 rounded"
             >
-              Save Changes
+              Save
             </button>
           )}
 
           <button
             onClick={() => setShowConfirmModal(true)}
-            className="text-red-600 border border-red-600 px-4 py-2 rounded hover:bg-red-50"
+            className="border border-red-600 text-red-600 px-4 py-2 rounded"
           >
             Delete
           </button>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Confirm Deletion</h3>
-            <p className="text-sm text-gray-600 mb-6">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center">
+          <div className="bg-white p-6 rounded shadow w-full max-w-sm">
+            <p className="mb-4">
               Are you sure you want to move this record to trash?
             </p>
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+                className="px-4 py-2 border rounded"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded"
               >
                 Confirm
               </button>

@@ -1,60 +1,81 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import logo from "../assets/logo.png";
 
 export default function Navbar() {
-  const { currentUser, userData, logout } = useAuth();
+  const { user, logout } = useAuth(); // ✅ reactive auth state
   const navigate = useNavigate();
+  const location = useLocation();
   const [showTooltip, setShowTooltip] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    await signOut(auth);
-    logout();
-    navigate('/');
+    try {
+      await logout(); // context handles cookie/session removal
+      navigate("/");  // redirect to home
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
   };
 
-  const hoverClass = `
-    border-b-2 border-transparent
-    hover:border-white
-    hover:bg-white
-    hover:text-[#ff8400]
-    transition-colors duration-200
-    px-2 py-1 rounded
+  // Function to highlight active links
+  const linkClass = (path) => `
+    px-2 py-1 rounded transition-colors duration-200
+    ${
+      location.pathname === path
+        ? "font-bold text-[#ff8400]"
+        : "text-black hover:text-[#ff8400]"
+    }
   `;
 
   return (
-    <nav className="bg-[#ff8400] text-white px-4 py-3 shadow">
+    <nav className="bg-white border-b-2 border-[#ff8400] px-4 py-3 shadow-sm">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Left: Site Title */}
-        <div className="text-xl font-semibold tracking-wide select-none">
-          Digital Institutional Repository
+        {/* Left: Logo + Title */}
+        <div className="flex items-center gap-3">
+          <img src={logo} alt="Logo" className="h-10 w-auto" />
+          <span className="text-xl font-semibold tracking-wide text-gray-800 select-none">
+            Digital Institutional Repository
+          </span>
         </div>
 
+        {/* Hamburger (Mobile only) */}
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="sm:hidden text-black text-2xl focus:outline-none"
+        >
+          ☰
+        </button>
+
         {/* Center: Navigation Links */}
-        <div className="space-x-4 flex items-center">
-          <Link to="/" className={hoverClass}>
+        <div
+          className={`${
+            menuOpen ? "block" : "hidden"
+          } sm:flex space-x-4 items-center absolute sm:static top-[64px] left-0 w-full sm:w-auto bg-white sm:bg-transparent sm:p-0 p-4`}
+        >
+          <Link to="/" className={linkClass("/")}>
             Home
           </Link>
 
-          {userData?.role === 'librarian' && (
-            <>
-              <Link to="/records" className={hoverClass}>
-                Records
-              </Link>
-              <Link to="/trash" className={hoverClass}>
-                Trash
-              </Link>
-            </>
+          {(user?.role === "librarian" || user?.role === "guest") && (
+            <Link to="/records" className={linkClass("/records")}>
+              Records
+            </Link>
           )}
 
-          {userData?.role === 'admin' && (
+          {user?.role === "librarian" && (
+            <Link to="/trash" className={linkClass("/trash")}>
+              Trash
+            </Link>
+          )}
+
+          {user?.role === "admin" && (
             <>
-              <Link to="/admin" className={hoverClass}>
+              <Link to="/admin" className={linkClass("/admin")}>
                 Admin Dashboard
               </Link>
-              <Link to="/logs" className={hoverClass}>
+              <Link to="/logs" className={linkClass("/logs")}>
                 Logs
               </Link>
             </>
@@ -62,20 +83,17 @@ export default function Navbar() {
         </div>
 
         {/* Right: Auth Controls */}
-        <div className="space-x-4 flex items-center relative">
-          {currentUser ? (
+        <div className="hidden sm:flex space-x-4 items-center relative">
+          {user ? (
             <>
-              {/* Username clickable + tooltip */}
+              {/* Username tooltip */}
               <div
-                className="relative hidden sm:inline-block"
+                className="relative"
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
               >
-                <Link
-                  to="/profile"
-                  className="text-sm hover:underline flex items-center gap-1"
-                >
-                  👤 {userData?.displayName || currentUser.email}
+                <Link to="/profile" className={linkClass("/profile")}>
+                  👤 {user?.displayName || user?.email}
                 </Link>
 
                 {showTooltip && (
@@ -87,17 +105,17 @@ export default function Navbar() {
 
               <button
                 onClick={handleLogout}
-                className={`bg-white text-[#ff8400] px-3 py-1 rounded text-sm ${hoverClass}`}
+                className="px-3 py-1 rounded text-sm bg-[#ff8400] text-white hover:brightness-110"
               >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className={hoverClass}>
+              <Link to="/login" className={linkClass("/login")}>
                 Login
               </Link>
-              <Link to="/register" className={hoverClass}>
+              <Link to="/register" className={linkClass("/register")}>
                 Register
               </Link>
             </>

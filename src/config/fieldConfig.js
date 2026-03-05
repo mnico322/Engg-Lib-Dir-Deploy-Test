@@ -18,12 +18,7 @@ export const fieldConfig = {
                   name: "materialType",
                   label: "Material Type",
                   type: "select",
-                  options: [
-                    "College Executive Board (CEB)",
-                    "College Academic Personnel Committee (CAPC)",
-                    "Graduate Faculty Council",
-                    "Others"
-                  ]
+                  options: ["College Executive Board (CEB)", "College Academic Personnel Committee (CAPC)", "Graduate Faculty Council", "Others"]
                 },
                 { name: "physicalDescription", label: "Physical Description", type: "text" },
                 { name: "dateEncoded", label: "Date Encoded", type: "date" },
@@ -40,12 +35,7 @@ export const fieldConfig = {
                   name: "materialType",
                   label: "Material Type",
                   type: "select",
-                  options: [
-                    "College Executive Board (CEB)",
-                    "College Academic Personnel Committee (CAPC)",
-                    "Graduate Faculty Council",
-                    "Others"
-                  ]
+                  options: ["College Executive Board (CEB)", "College Academic Personnel Committee (CAPC)", "Graduate Faculty Council", "Others"]
                 },
                 { name: "physicalDescription", label: "Physical Description", type: "text" },
                 { name: "dateEncoded", label: "Date Encoded", type: "date" },
@@ -62,12 +52,7 @@ export const fieldConfig = {
                   name: "materialType",
                   label: "Material Type",
                   type: "select",
-                  options: [
-                    "College Executive Board (CEB)",
-                    "College Academic Personnel Committee (CAPC)",
-                    "Graduate Faculty Council",
-                    "Others"
-                  ]
+                  options: ["College Executive Board (CEB)", "College Academic Personnel Committee (CAPC)", "Graduate Faculty Council", "Others"]
                 },
                 { name: "physicalDescription", label: "Physical Description", type: "text" },
                 { name: "dateEncoded", label: "Date Encoded", type: "date" },
@@ -84,12 +69,7 @@ export const fieldConfig = {
                   name: "materialType",
                   label: "Material Type",
                   type: "select",
-                  options: [
-                    "College Executive Board (CEB)",
-                    "College Academic Personnel Committee (CAPC)",
-                    "Graduate Faculty Council",
-                    "Others"
-                  ]
+                  options: ["College Executive Board (CEB)", "College Academic Personnel Committee (CAPC)", "Graduate Faculty Council", "Others"]
                 },
                 { name: "physicalDescription", label: "Physical Description", type: "text" },
                 { name: "dateEncoded", label: "Date Encoded", type: "date" },
@@ -104,17 +84,7 @@ export const fieldConfig = {
             { name: "creatorAuthor", label: "Creator/Author", type: "text" },
             { name: "provenance", label: "Provenance (Office/Unit/Department)", type: "text" },
             { name: "title", label: "Title", type: "text" },
-            {
-              name: "materialType",
-              label: "Material Type",
-              type: "select",
-              options: [
-                "College Executive Board (CEB)",
-                "College Academic Personnel Committee (CAPC)",
-                "Graduate Faculty Council",
-                "Others"
-              ]
-            },
+            { name: "materialType", label: "Material Type", type: "select", options: ["Annual Reports", "Research Reports", "Technical Reports"] },
             { name: "physicalDescription", label: "Physical Description", type: "text" },
             { name: "dateEncoded", label: "Date Encoded", type: "date" },
             { name: "contentDescription", label: "Content Description", type: "textarea" }
@@ -139,20 +109,7 @@ export const fieldConfig = {
               name: "materialType",
               label: "Material Type",
               type: "select",
-              options: [
-                "Yearbooks",
-                "Directories",
-                "Course Catalogs",
-                "Handbooks",
-                "Conference Proceedings",
-                "Reports",
-                "Journals",
-                "Magazines",
-                "Newspaper",
-                "Clippings",
-                "Newsletter",
-                "Gazettes"
-              ]
+              options: ["Yearbooks", "Directories", "Course Catalogs", "Handbooks", "Conference Proceedings", "Reports", "Journals", "Magazines", "Newspaper", "Clippings", "Newsletter", "Gazettes"]
             },
             { name: "dateEncoded", label: "Date Encoded", type: "date" },
             { name: "contentDescription", label: "Content Description", type: "textarea" }
@@ -173,25 +130,12 @@ export const fieldConfig = {
               name: "materialType",
               label: "Material Type",
               type: "select",
-              options: [
-                "Yearbooks",
-                "Directories",
-                "Course Catalogs",
-                "Handbooks",
-                "Conference Proceedings",
-                "Reports",
-                "Journals",
-                "Magazines",
-                "Newspaper",
-                "Clippings",
-                "Newsletter",
-                "Gazettes"
-              ]
+              options: ["Yearbooks", "Directories", "Course Catalogs", "Handbooks", "Conference Proceedings", "Reports", "Journals", "Magazines", "Newspaper", "Clippings", "Newsletter", "Gazettes"]
             },
             { name: "dateEncoded", label: "Date Encoded", type: "date" },
             { name: "contentDescription", label: "Content Description", type: "textarea" }
           ],
-          "NoN-UP/Other Publications": [
+          "Non-UP/Other Publications": [
             { name: "accessionNumbers", label: "Accession Number/s", type: "text" },
             { name: "callNo", label: "Call No.", type: "text" },
             { name: "boxNo", label: "Box No.", type: "text" },
@@ -207,20 +151,7 @@ export const fieldConfig = {
               name: "materialType",
               label: "Material Type",
               type: "select",
-              options: [
-                "Yearbooks",
-                "Directories",
-                "Course Catalogs",
-                "Handbooks",
-                "Conference Proceedings",
-                "Reports",
-                "Journals",
-                "Magazines",
-                "Newspaper",
-                "Clippings",
-                "Newsletter",
-                "Gazettes"
-              ]
+              options: ["Yearbooks", "Directories", "Course Catalogs", "Handbooks", "Conference Proceedings", "Reports", "Journals", "Magazines", "Newspaper", "Clippings", "Newsletter", "Gazettes"]
             },
             { name: "dateEncoded", label: "Date Encoded", type: "date" },
             { name: "contentDescription", label: "Content Description", type: "textarea" }
@@ -241,16 +172,7 @@ export const fieldConfig = {
               name: "materialType",
               label: "Material Type",
               type: "select",
-              options: [
-                "Personal Paper",
-                "Advertisements",
-                "Posters",
-                "Broadsides",
-                "Cards",
-                "Flyers",
-                "Brochures",
-                "Memorabilia such Photographs, Drawings, Plaque, Pins and other objects associated with memorable people"
-              ]
+              options: ["Personal Paper", "Advertisements", "Posters", "Broadsides", "Cards", "Flyers", "Brochures", "Memorabilia (Photographs, Drawings, Plaque, Pins, Objects)"]
             },
             { name: "physicalDescription", label: "Physical Description", type: "text" },
             { name: "remarks", label: "Remarks", type: "textarea" },
@@ -269,16 +191,7 @@ export const fieldConfig = {
               name: "materialType",
               label: "Material Type",
               type: "select",
-              options: [
-                "Personal Paper",
-                "Advertisements",
-                "Posters",
-                "Broadsides",
-                "Cards",
-                "Flyers",
-                "Brochures",
-                "Memorabilia such Photographs, Drawings, Plaque, Pins and other objects associated with memorable people"
-              ]
+              options: ["Personal Paper", "Advertisements", "Posters", "Broadsides", "Cards", "Flyers", "Brochures", "Memorabilia (Photographs, Drawings, Plaque, Pins, Objects)"]
             },
             { name: "physicalDescription", label: "Physical Description", type: "text" },
             { name: "remarks", label: "Remarks", type: "textarea" },
@@ -297,16 +210,7 @@ export const fieldConfig = {
               name: "materialType",
               label: "Material Type",
               type: "select",
-              options: [
-                "Personal Paper",
-                "Advertisements",
-                "Posters",
-                "Broadsides",
-                "Cards",
-                "Flyers",
-                "Brochures",
-                "Memorabilia such Photographs, Drawings, Plaque, Pins and other objects associated with memorable people"
-              ]
+              options: ["Personal Paper", "Advertisements", "Posters", "Broadsides", "Cards", "Flyers", "Brochures", "Memorabilia (Photographs, Drawings, Plaque, Pins, Objects)"]
             },
             { name: "physicalDescription", label: "Physical Description", type: "text" },
             { name: "remarks", label: "Remarks", type: "textarea" },
@@ -381,22 +285,13 @@ export const fieldConfig = {
           name: "citationDatabase",
           label: "Scientific Citation Indexing Databases",
           type: "select",
-          options: [
-            "Web of Science (WoS)",
-            "Institute for Scientific Information (ISI)",
-            "Scopus",
-            "Google Scholar",
-            "Others"
-          ]
+          options: ["Web of Science (WoS)", "Institute for Scientific Information (ISI)", "Scopus", "Google Scholar", "Others"]
         },
         {
           name: "access",
           label: "Access",
           type: "select",
-          options: [
-            "Open",
-            "via Subscription"
-          ]
+          options: ["Open", "via Subscription"]
         },
         { name: "journalTitle", label: "Title of the Journal", type: "text" },
         { name: "volume", label: "Volume", type: "text" },
@@ -426,20 +321,7 @@ export const fieldConfig = {
           name: "materialType",
           label: "Material Type",
           type: "select",
-          options: [
-            "Yearbooks",
-            "Directories",
-            "Course Catalogs",
-            "Handbooks",
-            "Conference Proceedings",
-            "Reports",
-            "Journals",
-            "Magazines",
-            "Newspaper",
-            "Clippings",
-            "Newsletter",
-            "Gazettes"
-          ]
+          options: ["Yearbooks", "Directories", "Course Catalogs", "Handbooks", "Conference Proceedings", "Reports", "Journals", "Magazines", "Newspaper", "Clippings", "Newsletter", "Gazettes"]
         },
         { name: "dateEncoded", label: "Date Encoded", type: "date" },
         { name: "contentDescription", label: "Content Description", type: "textarea" }

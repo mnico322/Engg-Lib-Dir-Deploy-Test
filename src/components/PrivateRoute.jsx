@@ -1,21 +1,23 @@
 // src/components/PrivateRoute.jsx
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-export default function PrivateRoute({ children, roleRequired }) {
-  const { currentUser, userData } = useAuth();
+export default function PrivateRoute({ allowedRoles }) {
+  const { user, loading } = useAuth(); // Now 'user' exists because of the AuthContext fix above
 
-  if (!currentUser || !userData) {
-    // Still loading or not authenticated
-    return <Navigate to="/login" />;
+  if (loading) {
+    return null; 
   }
 
-  if (roleRequired && userData.role !== roleRequired) {
-    return <Navigate to="/" />;
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
-  if (!userData) return <p>Loading...</p>;
-  
-  return children;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // If the user is a 'librarian' trying to access an 'admin' route
+    const redirectPath = user.role === "librarian" ? "/records" : "/";
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return <Outlet />; 
 }

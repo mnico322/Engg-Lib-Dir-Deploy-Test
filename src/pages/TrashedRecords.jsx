@@ -1,144 +1,290 @@
 // src/pages/TrashedRecords.jsx
-import React, { useEffect, useState } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function TrashedRecords() {
   const [records, setRecords] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('');
+  const [confirmAction, setConfirmAction] = useState(null); // {type: "restore"|"delete", record}
+  const { currentUser, userData } = useAuth();
+  const role = userData?.role || "guest";
 
-  const fetchTrashedRecords = async () => {
-    const querySnapshot = await getDocs(collection(db, 'records'));
-    const trashed = querySnapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(
-        rec =>
-          rec.status === 'trashed' &&
-          (!rec.trashedAt || rec.trashedAt.toDate() < new Date(new Date().getTime() + 30 * 86400000))
-      );
-    setRecords(trashed);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Filter state
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Fetch trashed records
+  const fetchRecords = async () => {
+    const querySnapshot = await getDocs(collection(db, "records"));
+    const data = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    setRecords(data.filter((r) => r.status === "trashed"));
   };
 
   useEffect(() => {
-    fetchTrashedRecords();
+    fetchRecords();
   }, []);
 
-  // Auto-delete records older than 30 days
-  useEffect(() => {
-    const deleteOldRecords = async () => {
-      const now = new Date();
-      for (const rec of records) {
-        if (rec.trashedAt && rec.trashedAt.toDate() <= new Date(now.getTime() - 30 * 86400000)) {
-          await deleteDoc(doc(db, 'records', rec.id));
-        }
-      }
-    };
-    deleteOldRecords();
-  }, [records]);
+  // Restore record
+  const handleRestore = async (rec) => {
+    try {
+      const recordRef = doc(db, "records", rec.id);
+      await updateDoc(recordRef, {
+        status: "active",
+        restoredAt: serverTimestamp(),
+      });
 
-  const handleExport = () => {
-    const data = records.map(rec => ({
-      Title: rec.title,
-      'Material Type': rec.materialType,
-      'Date Created': rec.dateCreated?.toDate().toLocaleDateString(),
-      'Date Encoded': rec.dateEncoded?.toDate().toLocaleDateString(),
-      Creator: rec.creator,
-      Status: rec.status,
-    }));
+      await addDoc(collection(db, "logs"), {
+        action: "restore",
+        recordId: rec.id,
+        title: rec.title || "(no title)",
+        accessCode: rec.accessCode || "-",
+        locationCode: rec.locationCode || "-",
+        user: userData?.displayName || currentUser?.email,
+        role,
+        timestamp: serverTimestamp(),
+      });
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Trashed Records');
-
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const fileData = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    saveAs(fileData, 'trashed_records.xlsx');
+      setConfirmAction(null);
+      fetchRecords();
+      alert("Record restored successfully.");
+    } catch (err) {
+      console.error("Error restoring record:", err);
+      alert("Failed to restore record.");
+    }
   };
 
-  const filtered = records.filter(rec =>
-    rec.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (filterType === '' || rec.materialType === filterType)
+  // Permanently delete record
+  const handleDelete = async (rec) => {
+    try {
+      await deleteDoc(doc(db, "records", rec.id));
+
+      await addDoc(collection(db, "logs"), {
+        action: "delete_permanent",
+        recordId: rec.id,
+        title: rec.title || "(no title)",
+        accessCode: rec.accessCode || "-",
+        locationCode: rec.locationCode || "-",
+        user: userData?.displayName || currentUser?.email,
+        role,
+        timestamp: serverTimestamp(),
+      });
+
+      setConfirmAction(null);
+      fetchRecords();
+      alert("Record permanently deleted.");
+    } catch (err) {
+      console.error("Error deleting record:", err);
+      alert("Failed to delete record.");
+    }
+  };
+
+  // Pagination helpers
+  const filteredRecords = records.filter((rec) =>
+    (rec.title || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredRecords.length / pageSize);
+  const paginatedRecords = filteredRecords.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
 
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+  };
+
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6 text-black"> Trashed Records</h2>
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+        <h1 className="text-xl font-bold">Trashed Records</h1>
 
-      {/* Search and filter */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Search by title..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border rounded w-full sm:w-1/2"
-        />
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="px-3 py-2 border rounded"
-        >
-          <option value="">All Types</option>
-          <option value="College Executive Board (CEB)">CEB</option>
-          <option value="College Academic Personnel Committee (CAPC)">CAPC</option>
-          <option value="Graduate Faculty Council">GFC</option>
-          <option value="Others">Others</option>
-        </select>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <input
+            type="text"
+            placeholder="Search by Title..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="border p-2 rounded flex-grow"
+          />
+        </div>
       </div>
 
-      <div className="mb-4">
-        <button
-          onClick={handleExport}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        >
-          ⬇ Export to Excel
-        </button>
-      </div>
-
-      <div className="overflow-x-auto bg-white rounded shadow">
-        <table className="min-w-full text-sm divide-y divide-gray-200">
-          <thead className="bg-gray-100 text-left font-semibold text-gray-700">
-            <tr>
-              <th className="px-4 py-2">Title</th>
-              <th className="px-4 py-2">Material Type</th>
-              <th className="px-4 py-2">Trashed At</th>
-              <th className="px-4 py-2 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length > 0 ? (
-              filtered.map(record => (
-                <tr key={record.id} className="hover:bg-gray-50 border-t">
-                  <td className="px-4 py-2">{record.title}</td>
-                  <td className="px-4 py-2">{record.materialType}</td>
-                  <td className="px-4 py-2">
-                    {record.trashedAt?.toDate().toLocaleDateString() || 'N/A'}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <Link
-                      to={`/records/${record.id}`}
-                      state={{ from: '/trash' }}
-                      className="text-blue-600 hover:underline"
-                    >
-                      View
-                    </Link>
-                  </td>
+      {/* Records list */}
+      <div className="bg-white shadow rounded p-4 overflow-x-auto">
+        {paginatedRecords.length === 0 ? (
+          <p className="text-gray-500">No trashed records found.</p>
+        ) : (
+          <>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-[#e8e8e8] text-black">
+                  <th className="p-3 text-left border-b border-gray-300">
+                    Access Code
+                  </th>
+                  <th className="p-3 text-left border-b border-gray-300">
+                    Location Code
+                  </th>
+                  <th className="p-3 text-left border-b border-gray-300">
+                    Author
+                  </th>
+                  <th className="p-3 text-left border-b border-gray-300">
+                    Title
+                  </th>
+                  <th className="p-3 text-left border-b border-gray-300">
+                    Date Trashed
+                  </th>
+                  <th className="p-3 text-center border-b border-gray-300">
+                    Actions
+                  </th>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="text-center px-4 py-6 text-gray-500">
-                  No trashed records found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {paginatedRecords.map((rec, idx) => (
+                  <tr
+                    key={rec.id}
+                    className={`hover:bg-gray-50 ${
+                      idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    }`}
+                  >
+                    <td className="p-3 border-b border-gray-200">
+                      {rec.accessCode || "-"}
+                    </td>
+                    <td className="p-3 border-b border-gray-200">
+                      {rec.locationCode || "-"}
+                    </td>
+                    <td className="p-3 border-b border-gray-200">
+                      {rec.creator || rec.author || "-"}
+                    </td>
+                    <td className="p-3 border-b border-gray-200">
+                      {rec.title || "-"}
+                    </td>
+                    <td className="p-3 border-b border-gray-200">
+                      {rec.trashedAt?.seconds
+                        ? new Date(
+                            rec.trashedAt.seconds * 1000
+                          ).toLocaleDateString()
+                        : "-"}
+                    </td>
+                    <td className="p-3 border-b border-gray-200 text-center space-x-2">
+                      {role !== "guest" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              setConfirmAction({ type: "restore", record: rec })
+                            }
+                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs"
+                          >
+                            Restore
+                          </button>
+                          <button
+                            onClick={() =>
+                              setConfirmAction({ type: "delete", record: rec })
+                            }
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+                          >
+                            Delete Permanently
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            <div className="flex justify-between items-center mt-4 flex-wrap gap-3">
+              <div>
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >
+                  Prev
+                </button>
+                <span className="mx-2">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label htmlFor="pageSize" className="font-medium">
+                  Rows per page:
+                </label>
+                <select
+                  id="pageSize"
+                  className="border p-1 rounded"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  {[10, 50, 100].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/25 z-50 p-4">
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">
+              Confirm {confirmAction.type === "restore" ? "Restore" : "Delete"}
+            </h3>
+            <p className="mb-6">
+              Are you sure you want to{" "}
+              {confirmAction.type === "restore" ? "restore" : "permanently delete"}{" "}
+              <strong>{confirmAction.record.title || "(no title)"}</strong>?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() =>
+                  confirmAction.type === "restore"
+                    ? handleRestore(confirmAction.record)
+                    : handleDelete(confirmAction.record)
+                }
+                className={`${
+                  confirmAction.type === "restore"
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-red-500 hover:bg-red-600"
+                } text-white px-4 py-2 rounded`}
+              >
+                {confirmAction.type === "restore" ? "Restore" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

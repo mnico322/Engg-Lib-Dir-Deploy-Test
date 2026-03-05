@@ -1,82 +1,87 @@
 // src/context/AuthContext.jsx
-import React, { useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../firebaseConfig';
-import { toast } from 'react-toastify';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
 
-const AuthContext = React.createContext();
+const AuthContext = createContext(null);
 
 export function useAuth() {
   return useContext(AuthContext);
 }
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userData, setUserData] = useState(null);
+  // 🔹 CHANGED: renamed 'user' to 'userData' to match AddRecord.jsx
+  const [userData, setUserData] = useState(null); 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-
-      if (user) {
-        try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDocSnap = await getDoc(userDocRef);
-
-          if (userDocSnap.exists()) {
-            const firestoreData = userDocSnap.data();
-            setUserData({
-              ...firestoreData,
-              displayName: firestoreData.displayName || user.displayName || user.email,
-            });
-          } else {
-            setUserData({
-              role: 'guest',
-              displayName: user.displayName || user.email,
-            });
-          }
-        } catch (err) {
-          toast.error('Failed to fetch user data');
-          console.error('Error fetching user data:', err);
-          setUserData({
-            role: 'guest',
-            displayName: user.displayName || user.email,
-          });
-        }
-      } else {
-        setUserData(null);
-      }
-
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const logout = async () => {
+  const fetchUser = async () => {
     try {
-      await signOut(auth);
-      setCurrentUser(null);
-      setUserData(null);
-      toast.success('Successfully logged out');
+      const res = await axios.get(
+        "http://localhost:5000/api/auth/me",
+        { withCredentials: true }
+      );
+      setUserData(res.data?.user || null);
     } catch (err) {
-      toast.error('Logout failed');
-      console.error('Logout error:', err);
+      setUserData(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const value = {
-    currentUser,
-    userData,
-    setUserData,
-    logout
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  const login = async (email, password) => {
+    const res = await axios.post(
+      "http://localhost:5000/api/auth/login",
+      { email, password },
+      { withCredentials: true }
+    );
+
+    const loggedInUser = res.data?.user;
+    if (!loggedInUser) throw new Error("Invalid login response");
+
+    setUserData(loggedInUser); 
+    return loggedInUser;
+  };
+
+  const register = async (displayName, email, password) => {
+    const res = await axios.post(
+      "http://localhost:5000/api/auth/register",
+      { displayName, email, password },
+      { withCredentials: true }
+    );
+    return res.data; 
+  };
+
+  const logout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:5000/api/auth/logout",
+        {},
+        { withCredentials: true }
+      );
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      setUserData(null); 
+    }
+  };
+
+const value = {
+    userData,        // Used by your components
+    user: userData,  // ✅ Added this to fix the PrivateRoute 'undefined' issue
+    login,
+    logout,
+    register,
+    loading,
+    isAuthenticated: !!userData,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {/* ✅ This guard is vital; it prevents routes from checking auth before the API responds */}
+      {!loading ? children : <div className="p-6">Loading Session...</div>}
     </AuthContext.Provider>
   );
 }
