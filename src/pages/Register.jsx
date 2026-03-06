@@ -68,7 +68,6 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-2">Create an Account</h2>
-        <p className="text-gray-500 text-sm text-center mb-6">Library Archive System</p>
 
         {error && (
           <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4">

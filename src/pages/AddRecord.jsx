@@ -40,7 +40,11 @@ export default function AddRecord() {
   const communityOptions = Object.keys(fieldConfig);
   
   const currentCommunityData = fieldConfig[selectedCommunity];
-  const collectionOptions = currentCommunityData?.collections 
+  
+  // ✅ Detect if the community has collections or is a flat array
+  const hasCollections = currentCommunityData && !Array.isArray(currentCommunityData) && currentCommunityData.collections;
+
+  const collectionOptions = hasCollections 
     ? Object.keys(currentCommunityData.collections) 
     : [];
 
@@ -54,27 +58,35 @@ export default function AddRecord() {
     ? Object.keys(currentSubColData.subSubCollections) 
     : [];
 
-  // ✅ Determine which fields to show based on the "deepest" selection that is an ARRAY
+  // ✅ Determine which fields to show
   const currentFields = (() => {
-    if (!selectedCommunity || !selectedCollection) return [];
+    if (!selectedCommunity) return [];
 
-    // 1. Check Sub-Sub-Collection Level
+    // 1. Check if Community is a flat array (e.g., Student Works)
+    if (Array.isArray(currentCommunityData)) {
+      return currentCommunityData;
+    }
+
+    // 2. Otherwise, we need a collection selected
+    if (!selectedCollection) return [];
+
+    // 3. Check Sub-Sub-Collection Level
     if (selectedSubSubCollection && Array.isArray(currentSubColData?.subSubCollections?.[selectedSubSubCollection])) {
       return currentSubColData.subSubCollections[selectedSubSubCollection];
     }
 
-    // 2. Check Sub-Collection Level
+    // 4. Check Sub-Collection Level
     if (selectedSubCollection && Array.isArray(currentCollectionData?.subCollections?.[selectedSubCollection])) {
       return currentCollectionData.subCollections[selectedSubCollection];
     }
 
-    // 3. Check Collection Level (e.g., Student Works > Default)
+    // 5. Check Collection Level
     if (selectedCollection && Array.isArray(currentCollectionData)) {
       return currentCollectionData;
     }
 
     return [];
-  })();
+  })(); 
 
   // --- Handlers ---
   const handleChange = (e) => {
@@ -93,13 +105,11 @@ export default function AddRecord() {
 
     try {
       const payload = new FormData();
-      // Add category metadata
       payload.append("community", selectedCommunity);
       payload.append("collection", selectedCollection);
       payload.append("subCollection", selectedSubCollection);
       payload.append("subSubCollection", selectedSubSubCollection);
 
-      // Add dynamic fields
       Object.entries(formData).forEach(([key, value]) => {
         payload.append(key, value);
       });
@@ -111,7 +121,6 @@ export default function AddRecord() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // Log activity
       await axios.post("http://localhost:5000/api/logs", {
         action: "add",
         recordId: res.data.id,
@@ -141,7 +150,6 @@ export default function AddRecord() {
         <p className="text-gray-500">Select the appropriate category to reveal the data entry form.</p>
       </div>
 
-      {/* --- Cascading Dropdowns --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
         
         {/* Community */}
@@ -163,8 +171,8 @@ export default function AddRecord() {
           </select>
         </div>
 
-        {/* Collection */}
-        {selectedCommunity && (
+        {/* ✅ Collection - Only show if currentCommunityData has a 'collections' object */}
+        {selectedCommunity && hasCollections && (
           <div className="flex flex-col">
             <label className="text-xs font-bold uppercase text-gray-500 mb-1 ml-1">Collection</label>
             <select 
@@ -221,53 +229,47 @@ export default function AddRecord() {
         )}
       </div>
 
-      {/* --- Dynamic Form --- */}
       {currentFields.length > 0 ? (
         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {currentFields.map((field) => (
-              <div key={field.name} className={field.type === "textarea" ? "md:col-span-2" : ""}>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  {field.label}
-                </label>
-                {field.type === "textarea" ? (
-                  <textarea 
-                    name={field.name} 
-                    rows="3"
-                    className="border p-2 rounded-lg w-full focus:ring-2 focus:ring-orange-500 outline-none" 
-                    value={formData[field.name] || ""} 
-                    onChange={handleChange} 
-                  />
-                ) : field.type === "select" ? (
-                  <select 
-                    name={field.name} 
-                    className="border p-2 rounded-lg w-full focus:ring-2 focus:ring-orange-500 outline-none" 
-                    value={formData[field.name] || ""} 
-                    onChange={handleChange}
-                  >
-                    <option value="">Select {field.label}...</option>
-                    {field.options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-                  </select>
-                ) : (
-                  <input 
-                    type={field.type} 
-                    name={field.name} 
-                    className="border p-2 rounded-lg w-full focus:ring-2 focus:ring-orange-500 outline-none" 
-                    value={formData[field.name] || ""} 
-                    onChange={handleChange} 
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+                <div key={field.name} className={field.type === "textarea" ? "md:col-span-2" : ""}>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    {field.label}
+                  </label>
 
-          <div className="pt-4 border-t border-gray-100">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Primary Document / File</label>
-            <input 
-              type="file" 
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" 
-              onChange={handleFileChange} 
-            />
+                  {field.type === "textarea" ? (
+                    <textarea
+                      name={field.name}
+                      onChange={handleChange}
+                      className="w-full p-2 border rounded-md h-24"
+                    />
+                  ) : 
+                  field.type === "file" ? (
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                    />
+                  ) : field.type === "select" ? (
+                    <select
+                      name={field.name}
+                      onChange={handleChange}
+                      className="w-full p-2 border rounded-md bg-white"
+                    >
+                      <option value="">Select {field.label}</option>
+                      {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type={field.type}
+                      name={field.name}
+                      onChange={handleChange}
+                      className="w-full p-2 border rounded-md"
+                    />
+                  )}
+                </div>
+              ))}
           </div>
 
           <div className="flex justify-end gap-3 pt-6">
@@ -288,7 +290,7 @@ export default function AddRecord() {
           </div>
         </form>
       ) : (
-        selectedCollection && (
+        selectedCommunity && (
           <div className="text-center p-10 bg-white rounded-xl border-2 border-dashed border-gray-200">
             <p className="text-gray-400 italic">Please complete your category selection above to load the entry form.</p>
           </div>
