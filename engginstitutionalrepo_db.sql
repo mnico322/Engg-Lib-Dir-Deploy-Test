@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 05, 2026 at 08:16 AM
+-- Generation Time: Mar 06, 2026 at 07:05 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -98,7 +98,87 @@ INSERT INTO `activity_logs` (`id`, `firebaseId`, `action`, `recordFirebaseId`, `
 (49, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 14:20:07'),
 (50, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 14:26:54'),
 (51, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 14:30:10'),
-(52, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 14:37:43');
+(52, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 14:37:43'),
+(53, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 16:26:24'),
+(54, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 16:44:24'),
+(55, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 16:44:38'),
+(56, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-05 17:25:10'),
+(57, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 09:40:46'),
+(58, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 09:42:10'),
+(59, NULL, 'add', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'Added record: Title to College Archives', '2026-03-06 09:44:10'),
+(60, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 09:44:19'),
+(61, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 09:44:20'),
+(62, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 09:44:22'),
+(63, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 09:44:22'),
+(64, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 09:54:46'),
+(65, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 10:19:14'),
+(66, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 11:29:26'),
+(67, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 11:39:38'),
+(68, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 11:39:41'),
+(69, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 11:39:47'),
+(70, NULL, 'add', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'Added record: Student Work 1 to Student Works', '2026-03-06 11:40:31'),
+(71, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:40:33'),
+(72, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:40:34'),
+(73, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:40:41'),
+(74, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:48:01'),
+(75, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:57:27'),
+(76, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:57:29'),
+(77, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:57:32'),
+(78, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:57:35'),
+(79, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:57:38'),
+(80, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:59:10'),
+(81, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:59:10'),
+(82, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:59:11'),
+(83, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:59:13'),
+(84, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 11:59:15'),
+(85, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:00:26'),
+(86, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:00:26'),
+(87, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:00:26'),
+(88, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:01:00'),
+(89, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:01:07'),
+(90, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:02:33'),
+(91, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:02:34'),
+(92, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:02:34'),
+(93, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:02:41'),
+(94, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:03:05'),
+(95, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:03:09'),
+(96, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:03:16'),
+(97, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:03:21'),
+(98, NULL, 'view', NULL, 1, 'Student Work 1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:03:29'),
+(99, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 12:03:41'),
+(100, NULL, 'add', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'Added record: Title to College Archives', '2026-03-06 12:11:32'),
+(101, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:11:34'),
+(102, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 12:11:50'),
+(103, NULL, 'add', NULL, 2, 'Title', NULL, NULL, 'Allan', 'librarian', 'Added record: Title to Student Works', '2026-03-06 12:12:36'),
+(104, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:12:40'),
+(105, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:12:48'),
+(106, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:12:51'),
+(107, NULL, 'view', NULL, 2, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:13:36'),
+(108, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:13:40'),
+(109, NULL, 'view', NULL, 2, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:13:42'),
+(110, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:13:49'),
+(111, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 12:13:55'),
+(112, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 12:18:02'),
+(113, NULL, 'add', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'Added record: Title to Student Works', '2026-03-06 12:18:44'),
+(114, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:18:47'),
+(115, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:18:51'),
+(116, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:18:53'),
+(117, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:30:33'),
+(118, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:30:38'),
+(119, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:31:05'),
+(120, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:31:09'),
+(121, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:31:18'),
+(122, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:31:39'),
+(123, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:32:19'),
+(124, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:36:13'),
+(125, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:36:25'),
+(126, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:38:00'),
+(127, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:38:22'),
+(128, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:49:17'),
+(129, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:49:24'),
+(130, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 12:51:02'),
+(131, NULL, 'add', NULL, 2, 'Title 2', NULL, NULL, 'Allan', 'librarian', 'Added record: Title 2 to College Archives', '2026-03-06 12:51:57'),
+(132, NULL, 'view', NULL, 2, 'Title 2', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:52:01');
 
 -- --------------------------------------------------------
 
@@ -108,27 +188,69 @@ INSERT INTO `activity_logs` (`id`, `firebaseId`, `action`, `recordFirebaseId`, `
 
 CREATE TABLE `records` (
   `id` int(11) NOT NULL,
-  `accessCode` varchar(100) DEFAULT NULL,
-  `boxNo` varchar(50) DEFAULT NULL,
-  `collection` varchar(255) DEFAULT NULL,
   `community` varchar(255) DEFAULT NULL,
-  `contentDescription` text DEFAULT NULL,
-  `creatorAuthor` varchar(255) DEFAULT NULL,
-  `dateCreated` varchar(20) DEFAULT NULL,
-  `dateEncoded` date DEFAULT NULL,
-  `locationCode` varchar(100) DEFAULT NULL,
-  `materialType` varchar(255) DEFAULT NULL,
-  `physicalDescription` text DEFAULT NULL,
-  `provenance` varchar(255) DEFAULT NULL,
-  `filePath` varchar(255) DEFAULT NULL,
-  `restoredAt` datetime DEFAULT NULL,
-  `status` enum('active','trashed') DEFAULT 'active',
+  `collection` varchar(255) DEFAULT NULL,
   `subCollection` varchar(255) DEFAULT NULL,
   `subSubCollection` varchar(255) DEFAULT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `trashedAt` datetime DEFAULT NULL,
-  `updatedAt` datetime DEFAULT NULL
+  `status` varchar(50) DEFAULT 'active',
+  `file_path` varchar(255) DEFAULT NULL,
+  `accessCode` varchar(100) DEFAULT NULL,
+  `locationCode` varchar(100) DEFAULT NULL,
+  `boxNo` varchar(100) DEFAULT NULL,
+  `author` varchar(255) DEFAULT NULL,
+  `provenance` varchar(255) DEFAULT NULL,
+  `dateCreated` date DEFAULT NULL,
+  `title` varchar(500) DEFAULT NULL,
+  `materialType` varchar(255) DEFAULT NULL,
+  `physicalDescription` text DEFAULT NULL,
+  `dateEncoded` date DEFAULT NULL,
+  `contentDescription` text DEFAULT NULL,
+  `accessLevel` varchar(100) DEFAULT 'Public (Metadata Only)',
+  `accessionNumbers` varchar(255) DEFAULT NULL,
+  `callNo` varchar(100) DEFAULT NULL,
+  `keywords` text DEFAULT NULL,
+  `publisher` varchar(255) DEFAULT NULL,
+  `placeOfPublication` varchar(255) DEFAULT NULL,
+  `yearPublished` varchar(20) DEFAULT NULL,
+  `lecturers` varchar(255) DEFAULT NULL,
+  `organizer` varchar(255) DEFAULT NULL,
+  `format` varchar(100) DEFAULT NULL,
+  `event` varchar(255) DEFAULT NULL,
+  `venue` varchar(255) DEFAULT NULL,
+  `date` date DEFAULT NULL,
+  `contributor` varchar(255) DEFAULT NULL,
+  `remarks` text DEFAULT NULL,
+  `faculty` varchar(255) DEFAULT NULL,
+  `titleOfConference` varchar(500) DEFAULT NULL,
+  `pageNo` varchar(50) DEFAULT NULL,
+  `placeOfConference` varchar(255) DEFAULT NULL,
+  `dateFrom` date DEFAULT NULL,
+  `dateTo` date DEFAULT NULL,
+  `abstract` text DEFAULT NULL,
+  `citationDatabase` varchar(100) DEFAULT NULL,
+  `access` varchar(100) DEFAULT NULL,
+  `journalTitle` varchar(255) DEFAULT NULL,
+  `volume` varchar(50) DEFAULT NULL,
+  `issueNo` varchar(50) DEFAULT NULL,
+  `seriesTitle` varchar(255) DEFAULT NULL,
+  `professionalChairSponsorTitle` varchar(255) DEFAULT NULL,
+  `colloquiumPlace` varchar(255) DEFAULT NULL,
+  `bookTitle` varchar(255) DEFAULT NULL,
+  `chapterTitle` varchar(255) DEFAULT NULL,
+  `chapterNo` varchar(50) DEFAULT NULL,
+  `projectTitle` varchar(255) DEFAULT NULL,
+  `sponsor` varchar(255) DEFAULT NULL,
+  `placeOfResearch` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `records`
+--
+
+INSERT INTO `records` (`id`, `community`, `collection`, `subCollection`, `subSubCollection`, `status`, `file_path`, `accessCode`, `locationCode`, `boxNo`, `author`, `provenance`, `dateCreated`, `title`, `materialType`, `physicalDescription`, `dateEncoded`, `contentDescription`, `accessLevel`, `accessionNumbers`, `callNo`, `keywords`, `publisher`, `placeOfPublication`, `yearPublished`, `lecturers`, `organizer`, `format`, `event`, `venue`, `date`, `contributor`, `remarks`, `faculty`, `titleOfConference`, `pageNo`, `placeOfConference`, `dateFrom`, `dateTo`, `abstract`, `citationDatabase`, `access`, `journalTitle`, `volume`, `issueNo`, `seriesTitle`, `professionalChairSponsorTitle`, `colloquiumPlace`, `bookTitle`, `chapterTitle`, `chapterNo`, `projectTitle`, `sponsor`, `placeOfResearch`, `created_at`) VALUES
+(1, 'Student Works', '', '', '', 'trashed', NULL, '123', '1', '2', 'Goku', 'COE', NULL, 'Title', 'Directories', NULL, '2026-03-06', NULL, 'Public (Metadata Only)', NULL, NULL, NULL, 'PH', 'QC,PH', '2023', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 04:18:44'),
+(2, 'College Archives', 'Permanent Records', 'Minutes of the Meetings', 'College Executive Board (CEB)', 'active', 'uploads\\1772772717958-structure.txt', '123', '1', '12', 'Allan', 'COE', '2026-03-06', 'Title 2', 'College Executive Board (CEB)', 'Book', '2026-03-06', NULL, 'Public (Metadata Only)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 04:51:57');
 
 -- --------------------------------------------------------
 
@@ -191,13 +313,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
 
 --
 -- AUTO_INCREMENT for table `records`
 --
 ALTER TABLE `records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `users`
