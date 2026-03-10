@@ -2,8 +2,8 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Mar 06, 2026 at 07:05 AM
+-- Host: localhost
+-- Generation Time: Mar 10, 2026 at 04:41 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -178,7 +178,20 @@ INSERT INTO `activity_logs` (`id`, `firebaseId`, `action`, `recordFirebaseId`, `
 (129, NULL, 'view', NULL, 1, 'Title', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:49:24'),
 (130, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 12:51:02'),
 (131, NULL, 'add', NULL, 2, 'Title 2', NULL, NULL, 'Allan', 'librarian', 'Added record: Title 2 to College Archives', '2026-03-06 12:51:57'),
-(132, NULL, 'view', NULL, 2, 'Title 2', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:52:01');
+(132, NULL, 'view', NULL, 2, 'Title 2', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 12:52:01'),
+(133, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 14:13:55'),
+(134, NULL, 'add', NULL, 3, '1', NULL, NULL, 'Allan', 'librarian', 'Added record: 1 to College Archives', '2026-03-06 14:14:20'),
+(135, NULL, 'view', NULL, 2, 'Title 2', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 14:14:28'),
+(136, NULL, 'view', NULL, 3, '1', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 14:14:44'),
+(137, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 19:41:51'),
+(138, NULL, 'add', NULL, 4, '2', NULL, NULL, 'Allan', 'librarian', 'Added record: 2 to College Archives', '2026-03-06 19:42:36'),
+(139, NULL, 'view', NULL, 4, '2', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 19:42:39'),
+(140, NULL, 'navigate-add', NULL, NULL, NULL, NULL, NULL, 'Allan', 'librarian', 'User navigate-added a record', '2026-03-06 21:03:20'),
+(141, NULL, 'add', NULL, 5, 'Whatver', NULL, NULL, 'Allan', 'librarian', 'Added record: Whatver to College Archives', '2026-03-06 21:04:22'),
+(142, NULL, 'view', NULL, 5, 'Whatver', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 21:04:31'),
+(143, NULL, 'view', NULL, 4, '2', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-07 20:50:42'),
+(144, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'unknown', 'guest', 'User undefineded a record', '2026-03-10 10:58:13'),
+(145, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'unknown', 'guest', 'User undefineded a record', '2026-03-10 11:28:19');
 
 -- --------------------------------------------------------
 
@@ -250,7 +263,11 @@ CREATE TABLE `records` (
 
 INSERT INTO `records` (`id`, `community`, `collection`, `subCollection`, `subSubCollection`, `status`, `file_path`, `accessCode`, `locationCode`, `boxNo`, `author`, `provenance`, `dateCreated`, `title`, `materialType`, `physicalDescription`, `dateEncoded`, `contentDescription`, `accessLevel`, `accessionNumbers`, `callNo`, `keywords`, `publisher`, `placeOfPublication`, `yearPublished`, `lecturers`, `organizer`, `format`, `event`, `venue`, `date`, `contributor`, `remarks`, `faculty`, `titleOfConference`, `pageNo`, `placeOfConference`, `dateFrom`, `dateTo`, `abstract`, `citationDatabase`, `access`, `journalTitle`, `volume`, `issueNo`, `seriesTitle`, `professionalChairSponsorTitle`, `colloquiumPlace`, `bookTitle`, `chapterTitle`, `chapterNo`, `projectTitle`, `sponsor`, `placeOfResearch`, `created_at`) VALUES
 (1, 'Student Works', '', '', '', 'trashed', NULL, '123', '1', '2', 'Goku', 'COE', NULL, 'Title', 'Directories', NULL, '2026-03-06', NULL, 'Public (Metadata Only)', NULL, NULL, NULL, 'PH', 'QC,PH', '2023', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 04:18:44'),
-(2, 'College Archives', 'Permanent Records', 'Minutes of the Meetings', 'College Executive Board (CEB)', 'active', 'uploads\\1772772717958-structure.txt', '123', '1', '12', 'Allan', 'COE', '2026-03-06', 'Title 2', 'College Executive Board (CEB)', 'Book', '2026-03-06', NULL, 'Public (Metadata Only)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 04:51:57');
+(2, 'College Archives', 'Permanent Records', 'Minutes of the Meetings', 'College Executive Board (CEB)', 'active', 'uploads\\1772772717958-structure.txt', '123', '1', '12', 'Allan', 'COE', '2026-03-06', 'Title 2', 'College Executive Board (CEB)', 'Book', '2026-03-06', NULL, 'Public (Metadata Only)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 04:51:57'),
+(3, 'College Archives', 'Publications', 'College of Engineering (COE)', '', 'active', 'uploads\\1772777660169-CS_20_Problem_Set-4.pdf', NULL, NULL, '1', '1', '1', NULL, '1', 'Newspaper', '1', '1111-11-11', '11', 'Public (Metadata & File)', '1', '1', '1', '1', '1', '1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 06:14:20'),
+(4, 'College Archives', 'Permanent Records', 'Minutes of the Meetings', 'College Executive Board (CEB)', 'active', 'uploads\\1772797356761-JF26 Shiftee List.pdf', '2', '2', '2', '2', '2', '2222-02-22', '2', 'College Executive Board (CEB)', '1', '2222-02-22', 'hi', 'Public (Metadata & File)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 11:42:36'),
+(5, 'College Archives', 'Permanent Records', 'Reports', '', 'active', 'uploads\\1772802262482-Lec4-Transistors-Mosfets.pdf', '123', 'QC', '4', 'Cheese', 'COE', '2026-03-06', 'Whatver', 'Annual Reports', 'Book', '2026-03-06', 'I am a book', 'Public (Metadata & File)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 13:04:22'),
+(6, 'College Archives', 'Permanent Records', 'Minutes of the Meetings', 'Others', 'active', 'uploads\\1773113347749-Q5.pdf', '4', '4', '4', 'Nico', '4', '1908-04-04', 'Hi', 'College Executive Board (CEB)', 'Book', '2026-03-10', 'hehe', 'Public (Metadata & File)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-10 03:29:07');
 
 -- --------------------------------------------------------
 
@@ -278,7 +295,8 @@ INSERT INTO `users` (`id`, `firebaseId`, `email`, `password`, `role`, `displayNa
 (2, NULL, 'admin@up.edu.ph', '$2b$10$JQkj9dB3zmROC2dI9DaAvODOBcoVcLEqxR5gPhBMaBX/Wgd1Rxq.6', 'admin', 'admin', '2026-02-19 01:38:54', 1),
 (3, NULL, 'librarian@up.edu.ph', '$2b$12$lg/dKWKzaBLHnS6ItnNCTOahEZ.hxxJSCZM3WSzRZepXyW/tZa2Ka', 'librarian', 'librarian', '2026-02-19 02:37:45', 1),
 (4, NULL, 'guest@up.edu.ph', '$2b$12$XXsojA.XjJy2u11jlVQYT.KacRJQ2SXlPiCekZDCY6Dx2lyeBqiMi', 'guest', 'guest', '2026-02-19 02:52:04', 1),
-(5, NULL, 'admin2@up.edu.ph', '$2b$12$iPuzI/DKPZce4t/7dYcDb.bfYciM1ERNw6CzS8CS.TcWwMZtAWOG6', 'admin', 'admin2', '2026-03-04 07:50:02', 1);
+(5, NULL, 'admin2@up.edu.ph', '$2b$12$iPuzI/DKPZce4t/7dYcDb.bfYciM1ERNw6CzS8CS.TcWwMZtAWOG6', 'admin', 'admin2', '2026-03-04 07:50:02', 1),
+(6, NULL, 'ntmercado2@up.edu.ph', '$2b$12$.27w4LTf243IAOURh8yokebQbKZrbMVo7YtsAV5rYztWG3mmYPYqe', '', 'Nico', '2026-03-06 13:06:26', 1);
 
 --
 -- Indexes for dumped tables
@@ -313,19 +331,19 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
 
 --
 -- AUTO_INCREMENT for table `records`
 --
 ALTER TABLE `records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
