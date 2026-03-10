@@ -7,12 +7,10 @@ export default function ActivityLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Search + Pagination state
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // 1. Fetch from your MySQL Backend
   const fetchLogs = async () => {
     try {
       setLoading(true);
@@ -32,16 +30,16 @@ export default function ActivityLogs() {
     fetchLogs();
   }, []);
 
-  // 📂 CSV Export Logic
+  // ✅ FIXED: CSV Export now uses correct database columns
   const exportToCSV = () => {
     if (logs.length === 0) return toast.error("No logs to export");
 
-    const headers = ["Timestamp", "Action", "User", "Details"];
+    const headers = ["Timestamp", "Action", "User", "Description"];
     const rows = logs.map(log => [
-      new Date(log.created_at).toLocaleString(),
+      log.timestamp ? new Date(log.timestamp).toLocaleString() : "N/A",
       log.action,
-      log.displayName || log.user_name || "System",
-      `"${(log.details || "").replace(/"/g, '""')}"` 
+      log.user || "System",
+      `"${(log.description || "").replace(/"/g, '""')}"` 
     ]);
 
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -57,18 +55,16 @@ export default function ActivityLogs() {
 
   if (loading) return <div className="p-6 text-gray-600">Loading logs...</div>;
 
-  // 2. Filtering Logic
+  // ✅ FIXED: Filtering logic now checks 'user' and 'description'
   const filteredLogs = logs.filter((log) => {
     const term = searchTerm.toLowerCase();
     return (
-      (log.user_name || "").toLowerCase().includes(term) ||
-      (log.displayName || "").toLowerCase().includes(term) ||
+      (log.user || "").toLowerCase().includes(term) ||
       (log.action || "").toLowerCase().includes(term) ||
-      (log.details || "").toLowerCase().includes(term)
+      (log.description || "").toLowerCase().includes(term)
     );
   });
 
-  // 3. Pagination Logic
   const totalPages = Math.ceil(filteredLogs.length / pageSize);
   const paginatedLogs = filteredLogs.slice(
     (currentPage - 1) * pageSize,
@@ -85,7 +81,6 @@ export default function ActivityLogs() {
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
         <h1 className="text-2xl font-bold text-black">Activity Logs</h1>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Export Button added next to search */}
           <button 
             onClick={exportToCSV}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition flex items-center gap-2 whitespace-nowrap"
@@ -94,7 +89,7 @@ export default function ActivityLogs() {
           </button>
           <input
             type="text"
-            placeholder="Search logs..."
+            placeholder="Search by user, action, or details..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -112,7 +107,7 @@ export default function ActivityLogs() {
               <th className="px-4 py-3 text-left">Timestamp</th>
               <th className="px-4 py-3 text-left">Action</th>
               <th className="px-4 py-3 text-left">User</th>
-              <th className="px-4 py-3 text-left">Details</th>
+              <th className="px-4 py-3 text-left">Description</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -124,17 +119,12 @@ export default function ActivityLogs() {
                         <>
                           <div className="font-medium text-gray-900">
                             {new Date(log.timestamp).toLocaleDateString('en-PH', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
+                              month: 'short', day: 'numeric', year: 'numeric'
                             })}
                           </div>
                           <div className="text-xs text-gray-500">
                             {new Date(log.timestamp).toLocaleTimeString('en-PH', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit',
-                              hour12: true
+                              hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
                             })}
                           </div>
                         </>
@@ -143,9 +133,8 @@ export default function ActivityLogs() {
                       )}
                   </td>
                   <td className="px-4 py-3 font-semibold text-orange-600">{log.action}</td>
-                  <td className="px-4 py-3">{log.user || "System"}</td>
+                  <td className="px-4 py-3 font-medium">{log.user || "System"}</td>
                   <td className="px-4 py-3 text-gray-600 italic">{log.description || "No details provided"}</td>
-                  
                 </tr>
               ))
             ) : (
