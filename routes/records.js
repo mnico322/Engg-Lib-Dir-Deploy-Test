@@ -43,15 +43,16 @@ router.post('/', verifyToken, upload.single('file'), async (req, res) => {
     const [result] = await db.execute(sql, values);
 
     // LOGGING
-    const userName = req.user?.displayName || req.user?.username || "Librarian";
-    const userId = req.user?.id || 0;
-    const recordTitle = data.title || "Untitled Record";
+    const userDisplayName = req.body.author || "System"; // Or get from session
+    const recordTitle = req.body.title || "Untitled";
 
+    // Call your logger properly
     await logActivity(
-      userId,
-      userName,
-      'ADD',
-      `Added new record: "${recordTitle}" to community: ${data.community}`
+      userDisplayName,   // Pass the STRING name
+      "ADD",             // Action
+      result.insertId,   // The new ID
+      recordTitle,       // Title
+      `New record added to ${req.body.community}` // Description
     );
 
     res.status(201).json({ message: "Record added successfully", id: result.insertId });

@@ -99,6 +99,7 @@ export default function AddRecord() {
       if (file) payload.append("file", file);
 
       // We only need this one call; the backend handles logging internally now
+      console.log("What I'm sending:", Object.fromEntries(payload.entries()));
       await axios.post("http://localhost:5000/api/records", payload, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
