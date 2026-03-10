@@ -119,12 +119,33 @@ export default function ActivityLogs() {
             {paginatedLogs.length > 0 ? (
               paginatedLogs.map((log, idx) => (
                 <tr key={log.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="px-4 py-3">
-                    {log.created_at ? new Date(log.created_at).toLocaleString() : "—"}
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                      {log.timestamp ? (
+                        <>
+                          <div className="font-medium text-gray-900">
+                            {new Date(log.timestamp).toLocaleDateString('en-PH', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(log.timestamp).toLocaleTimeString('en-PH', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                              hour12: true
+                            })}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
                   </td>
                   <td className="px-4 py-3 font-semibold text-orange-600">{log.action}</td>
-                  <td className="px-4 py-3">{log.displayName || log.user_name || "System"}</td>
-                  <td className="px-4 py-3 text-gray-600 italic">{log.details || "No details provided"}</td>
+                  <td className="px-4 py-3">{log.user || "System"}</td>
+                  <td className="px-4 py-3 text-gray-600 italic">{log.description || "No details provided"}</td>
+                  
                 </tr>
               ))
             ) : (
