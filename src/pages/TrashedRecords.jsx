@@ -1,85 +1,70 @@
 // src/pages/TrashedRecords.jsx
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function TrashedRecords() {
   const [records, setRecords] = useState([]);
   const [confirmAction, setConfirmAction] = useState(null); // {type: "restore"|"delete", record}
-  const { currentUser, userData } = useAuth();
+  const { userData } = useAuth();
   const role = userData?.role || "guest";
 
-  // Pagination state
+  // Pagination & Filter state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  // Filter state
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch trashed records
-  const fetchRecords = async () => {
-    const querySnapshot = await getDocs(collection(db, "records"));
-    const data = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setRecords(data.filter((r) => r.status === "trashed"));
-  };
+
+const fetchRecords = async () => {
+  try {
+    // Point to the new /trashed endpoint
+    const res = await axios.get("http://localhost:5000/api/records/trashed", { 
+      withCredentials: true 
+    });
+    
+    // The backend now returns only trashed items
+    setRecords(res.data?.records || []);
+  } catch (err) {
+    console.error("Error fetching trashed records:", err);
+    toast.error("Failed to load trashed records.");
+  }
+};
 
   useEffect(() => {
     fetchRecords();
   }, []);
 
-  // Restore record
+  // Restore record (sets status back to active)
   const handleRestore = async (rec) => {
     try {
-      const recordRef = doc(db, "records", rec.id);
-      await updateDoc(recordRef, {
-        status: "active",
-        restoredAt: serverTimestamp(),
-      });
-
-      await addDoc(collection(db, "logs"), {
-        action: "restore",
-        recordId: rec.id,
-        title: rec.title || "(no title)",
-        accessCode: rec.accessCode || "-",
-        locationCode: rec.locationCode || "-",
-        user: userData?.displayName || currentUser?.email,
-        role,
-        timestamp: serverTimestamp(),
-      });
-
+      await axios.put(`http://localhost:5000/api/records/${rec.id}`, 
+        { status: "active" }, 
+        { withCredentials: true }
+      );
+      
+      toast.success("Record restored successfully.");
       setConfirmAction(null);
       fetchRecords();
-      alert("Record restored successfully.");
     } catch (err) {
       console.error("Error restoring record:", err);
-      alert("Failed to restore record.");
+      toast.error("Failed to restore record.");
     }
   };
 
-  // Permanently delete record
+  // Permanently delete record (Physical delete from DB)
   const handleDelete = async (rec) => {
     try {
-      await deleteDoc(doc(db, "records", rec.id));
+      // NOTE: Ensure your backend has a route for permanent deletion
+      // If your standard DELETE route just trashes it, you might need a different endpoint
+      await axios.delete(`http://localhost:5000/api/records/${rec.id}/permanent`, { withCredentials: true });
 
-      await addDoc(collection(db, "logs"), {
-        action: "delete_permanent",
-        recordId: rec.id,
-        title: rec.title || "(no title)",
-        accessCode: rec.accessCode || "-",
-        locationCode: rec.locationCode || "-",
-        user: userData?.displayName || currentUser?.email,
-        role,
-        timestamp: serverTimestamp(),
-      });
-
+      toast.success("Record permanently deleted.");
       setConfirmAction(null);
       fetchRecords();
-      alert("Record permanently deleted.");
     } catch (err) {
       console.error("Error deleting record:", err);
-      alert("Failed to delete record.");
+      toast.error("Failed to permanently delete.");
     }
   };
 
@@ -87,7 +72,8 @@ export default function TrashedRecords() {
   const filteredRecords = records.filter((rec) =>
     (rec.title || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const totalPages = Math.ceil(filteredRecords.length / pageSize);
+  
+  const totalPages = Math.ceil(filteredRecords.length / pageSize) || 1;
   const paginatedRecords = filteredRecords.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -99,150 +85,90 @@ export default function TrashedRecords() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-        <h1 className="text-xl font-bold">Trashed Records</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+        <h1 className="text-2xl font-bold text-gray-800">Trash Bin</h1>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search by Title..."
+            placeholder="Search trashed items..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="border p-2 rounded flex-grow"
+            className="border-2 border-gray-200 p-2 rounded-lg focus:border-blue-500 outline-none w-full sm:w-64"
           />
         </div>
       </div>
 
       {/* Records list */}
-      <div className="bg-white shadow rounded p-4 overflow-x-auto">
+      <div className="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
         {paginatedRecords.length === 0 ? (
-          <p className="text-gray-500">No trashed records found.</p>
+          <div className="p-10 text-center text-gray-400 italic">
+            No records in the trash.
+          </div>
         ) : (
           <>
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-[#e8e8e8] text-black">
-                  <th className="p-3 text-left border-b border-gray-300">
-                    Access Code
-                  </th>
-                  <th className="p-3 text-left border-b border-gray-300">
-                    Location Code
-                  </th>
-                  <th className="p-3 text-left border-b border-gray-300">
-                    Author
-                  </th>
-                  <th className="p-3 text-left border-b border-gray-300">
-                    Title
-                  </th>
-                  <th className="p-3 text-left border-b border-gray-300">
-                    Date Trashed
-                  </th>
-                  <th className="p-3 text-center border-b border-gray-300">
-                    Actions
-                  </th>
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="p-4 text-left">Title</th>
+                  <th className="p-4 text-left">Category</th>
+                  <th className="p-4 text-left">Date Trashed</th>
+                  <th className="p-4 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {paginatedRecords.map((rec, idx) => (
-                  <tr
-                    key={rec.id}
-                    className={`hover:bg-gray-50 ${
-                      idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    }`}
-                  >
-                    <td className="p-3 border-b border-gray-200">
-                      {rec.accessCode || "-"}
+              <tbody className="divide-y divide-gray-100">
+                {paginatedRecords.map((rec) => (
+                  <tr key={rec.id} className="hover:bg-red-50/30 transition">
+                    <td className="p-4 font-semibold text-gray-700">{rec.title || "Untitled"}</td>
+                    <td className="p-4 text-gray-500 text-xs">{rec.community} / {rec.collection}</td>
+                    <td className="p-4 text-gray-500">
+                      {rec.updated_at ? new Date(rec.updated_at).toLocaleDateString() : "Unknown"}
                     </td>
-                    <td className="p-3 border-b border-gray-200">
-                      {rec.locationCode || "-"}
-                    </td>
-                    <td className="p-3 border-b border-gray-200">
-                      {rec.creator || rec.author || "-"}
-                    </td>
-                    <td className="p-3 border-b border-gray-200">
-                      {rec.title || "-"}
-                    </td>
-                    <td className="p-3 border-b border-gray-200">
-                      {rec.trashedAt?.seconds
-                        ? new Date(
-                            rec.trashedAt.seconds * 1000
-                          ).toLocaleDateString()
-                        : "-"}
-                    </td>
-                    <td className="p-3 border-b border-gray-200 text-center space-x-2">
-                      {role !== "guest" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              setConfirmAction({ type: "restore", record: rec })
-                            }
-                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs"
-                          >
-                            Restore
-                          </button>
-                          <button
-                            onClick={() =>
-                              setConfirmAction({ type: "delete", record: rec })
-                            }
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
-                          >
-                            Delete Permanently
-                          </button>
-                        </>
-                      )}
+                    <td className="p-4 text-center space-x-2">
+                      <button
+                        onClick={() => setConfirmAction({ type: "restore", record: rec })}
+                        className="text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-md text-xs font-bold border border-emerald-200 transition"
+                      >
+                        Restore
+                      </button>
+                      <button
+                        onClick={() => setConfirmAction({ type: "delete", record: rec })}
+                        className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-bold border border-red-200 transition"
+                      >
+                        Purge
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            {/* Pagination Controls */}
-            <div className="flex justify-between items-center mt-4 flex-wrap gap-3">
-              <div>
+            {/* Pagination */}
+            <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
+              <div className="flex gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                  className="px-3 py-1 border rounded bg-white disabled:opacity-50"
                 >
                   Prev
                 </button>
-                <span className="mx-2">
-                  Page {currentPage} of {totalPages}
-                </span>
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                  className="px-3 py-1 border rounded bg-white disabled:opacity-50"
                 >
                   Next
                 </button>
               </div>
-
-              <div className="flex items-center gap-2">
-                <label htmlFor="pageSize" className="font-medium">
-                  Rows per page:
-                </label>
-                <select
-                  id="pageSize"
-                  className="border p-1 rounded"
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  {[10, 50, 100].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <span className="text-gray-500 text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
             </div>
           </>
         )}
@@ -250,36 +176,26 @@ export default function TrashedRecords() {
 
       {/* Confirmation Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/25 z-50 p-4">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              Confirm {confirmAction.type === "restore" ? "Restore" : "Delete"}
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm z-50 p-4">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl ${confirmAction.type === 'restore' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                {confirmAction.type === 'restore' ? '↺' : '🗑️'}
+            </div>
+            <h3 className="text-xl font-bold mb-2">
+              {confirmAction.type === "restore" ? "Restore Record?" : "Permanent Delete?"}
             </h3>
-            <p className="mb-6">
-              Are you sure you want to{" "}
-              {confirmAction.type === "restore" ? "restore" : "permanently delete"}{" "}
-              <strong>{confirmAction.record.title || "(no title)"}</strong>?
+            <p className="text-gray-500 text-sm mb-8">
+                {confirmAction.type === "restore" 
+                  ? "This record will be visible again in the main library." 
+                  : "This action cannot be undone. All metadata and files will be lost."}
             </p>
-            <div className="flex justify-end gap-2">
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmAction(null)} className="flex-1 py-2 text-sm font-bold text-gray-400">Cancel</button>
               <button
-                onClick={() => setConfirmAction(null)}
-                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded"
+                onClick={() => confirmAction.type === "restore" ? handleRestore(confirmAction.record) : handleDelete(confirmAction.record)}
+                className={`flex-1 py-2 rounded-xl text-white text-sm font-bold ${confirmAction.type === "restore" ? "bg-emerald-600" : "bg-red-600"}`}
               >
-                Cancel
-              </button>
-              <button
-                onClick={() =>
-                  confirmAction.type === "restore"
-                    ? handleRestore(confirmAction.record)
-                    : handleDelete(confirmAction.record)
-                }
-                className={`${
-                  confirmAction.type === "restore"
-                    ? "bg-green-500 hover:bg-green-600"
-                    : "bg-red-500 hover:bg-red-600"
-                } text-white px-4 py-2 rounded`}
-              >
-                {confirmAction.type === "restore" ? "Restore" : "Delete"}
+                Confirm
               </button>
             </div>
           </div>

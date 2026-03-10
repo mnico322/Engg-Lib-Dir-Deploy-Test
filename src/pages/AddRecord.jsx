@@ -40,11 +40,7 @@ export default function AddRecord() {
   const communityOptions = Object.keys(fieldConfig);
   
   const currentCommunityData = fieldConfig[selectedCommunity];
-  
-  // ✅ Detect if the community has collections or is a flat array
-  const hasCollections = currentCommunityData && !Array.isArray(currentCommunityData) && currentCommunityData.collections;
-
-  const collectionOptions = hasCollections 
+  const collectionOptions = currentCommunityData?.collections 
     ? Object.keys(currentCommunityData.collections) 
     : [];
 
@@ -58,35 +54,21 @@ export default function AddRecord() {
     ? Object.keys(currentSubColData.subSubCollections) 
     : [];
 
-  // ✅ Determine which fields to show
   const currentFields = (() => {
     if (!selectedCommunity) return [];
-
-    // 1. Check if Community is a flat array (e.g., Student Works)
-    if (Array.isArray(currentCommunityData)) {
-      return currentCommunityData;
-    }
-
-    // 2. Otherwise, we need a collection selected
+    if (Array.isArray(currentCommunityData)) return currentCommunityData;
     if (!selectedCollection) return [];
-
-    // 3. Check Sub-Sub-Collection Level
     if (selectedSubSubCollection && Array.isArray(currentSubColData?.subSubCollections?.[selectedSubSubCollection])) {
       return currentSubColData.subSubCollections[selectedSubSubCollection];
     }
-
-    // 4. Check Sub-Collection Level
     if (selectedSubCollection && Array.isArray(currentCollectionData?.subCollections?.[selectedSubCollection])) {
       return currentCollectionData.subCollections[selectedSubCollection];
     }
-
-    // 5. Check Collection Level
     if (selectedCollection && Array.isArray(currentCollectionData)) {
       return currentCollectionData;
     }
-
     return [];
-  })(); 
+  })();
 
   // --- Handlers ---
   const handleChange = (e) => {
@@ -116,19 +98,11 @@ export default function AddRecord() {
 
       if (file) payload.append("file", file);
 
-      const res = await axios.post("http://localhost:5000/api/records", payload, {
+      // We only need this one call; the backend handles logging internally now
+      await axios.post("http://localhost:5000/api/records", payload, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      await axios.post("http://localhost:5000/api/logs", {
-        action: "add",
-        recordId: res.data.id,
-        title: formData.title,
-        user: userData?.displayName || userData?.email,
-        role: role,
-        description: `Added record: ${formData.title} to ${selectedCommunity}`,
-      }, { withCredentials: true });
 
       toast.success("Record saved successfully!");
       navigate("/records");
@@ -151,8 +125,6 @@ export default function AddRecord() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
-        
-        {/* Community */}
         <div className="flex flex-col">
           <label className="text-xs font-bold uppercase text-gray-500 mb-1 ml-1">Community</label>
           <select 
@@ -171,8 +143,7 @@ export default function AddRecord() {
           </select>
         </div>
 
-        {/* ✅ Collection - Only show if currentCommunityData has a 'collections' object */}
-        {selectedCommunity && hasCollections && (
+        {selectedCommunity && (
           <div className="flex flex-col">
             <label className="text-xs font-bold uppercase text-gray-500 mb-1 ml-1">Collection</label>
             <select 
@@ -191,7 +162,6 @@ export default function AddRecord() {
           </div>
         )}
 
-        {/* Sub-Collection */}
         {subCollectionOptions.length > 0 && (
           <div className="flex flex-col">
             <label className="text-xs font-bold uppercase text-gray-500 mb-1 ml-1">Sub-Collection</label>
@@ -210,7 +180,6 @@ export default function AddRecord() {
           </div>
         )}
 
-        {/* Sub-Sub-Collection */}
         {subSubCollectionOptions.length > 0 && (
           <div className="flex flex-col">
             <label className="text-xs font-bold uppercase text-gray-500 mb-1 ml-1">Specific Category</label>
@@ -244,21 +213,23 @@ export default function AddRecord() {
                       onChange={handleChange}
                       className="w-full p-2 border rounded-md h-24"
                     />
-                  ) : 
-                  field.type === "file" ? (
+                  ) : field.type === "file" ? (
                     <input
                       type="file"
                       onChange={handleFileChange}
                       className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
                     />
                   ) : field.type === "select" ? (
+                    /* This is the part that handles Access Level and other dropdowns */
                     <select
                       name={field.name}
                       onChange={handleChange}
                       className="w-full p-2 border rounded-md bg-white"
                     >
                       <option value="">Select {field.label}</option>
-                      {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      {field.options?.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
                     </select>
                   ) : (
                     <input

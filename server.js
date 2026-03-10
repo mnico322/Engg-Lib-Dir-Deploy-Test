@@ -1,9 +1,11 @@
+import { logActivity } from "./backend/utils/logger.js";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import userRoutes from "./routes/users.js";
 
 // Route Imports
 import authRoutes from "./routes/auth.routes.js";
@@ -36,6 +38,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/records", recordRoutes);
 app.use("/api/logs", logRoutes);
+app.use("/api/users", userRoutes);
 
 // --- 404 Catch-all ---
 // If a request hits this, it means the URL doesn't exist in the routes above
@@ -51,5 +54,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

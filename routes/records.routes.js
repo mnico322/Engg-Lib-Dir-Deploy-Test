@@ -2,7 +2,7 @@ import express from "express";
 import { db } from "../db.js";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
+import fs from "fs"; // Only one import needed at the top
 
 const router = express.Router();
 
@@ -19,13 +19,48 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-/* ================= GET ALL RECORDS (With Visibility Logic) ================= */
+/* ================= 1. TRASHED RECORDS (SPECIFIC ROUTE) ================= */
+// 💡 ALWAYS put specific strings like "/trashed" ABOVE dynamic routes like "/:id"
+router.get("/trashed", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM records WHERE status = 'trashed' ORDER BY id DESC"
+    );
+    res.json({ records: rows });
+  } catch (err) {
+    console.error("Fetch trash error:", err);
+    res.status(500).json({ message: "Error fetching trash" });
+  }
+});
+
+/* ================= 2. PERMANENT DELETE (SPECIFIC ROUTE) ================= */
+router.delete("/:id/permanent", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get file path before deleting record
+    const [record] = await db.query("SELECT file_path FROM records WHERE id = ?", [id]);
+    
+    if (record.length > 0 && record[0].file_path) {
+      if (fs.existsSync(record[0].file_path)) {
+        fs.unlinkSync(record[0].file_path);
+      }
+    }
+
+    await db.query("DELETE FROM records WHERE id = ?", [id]);
+    res.json({ message: "Record and file permanently purged" });
+  } catch (err) {
+    console.error("Purge error:", err);
+    res.status(500).json({ message: "Failed to purge record" });
+  }
+});
+
+/* ================= 3. GET ALL RECORDS (ACTIVE ONLY) ================= */
 router.get("/", async (req, res) => {
   try {
     const userRole = req.cookies?.role || 'guest'; 
     let sql = "SELECT * FROM records";
     
-    // 🔒 Visibility Logic
     if (userRole === 'guest') {
       sql += " WHERE accessLevel != 'Private (Staff Only)' AND status = 'active'";
     } else {
@@ -42,8 +77,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-/* ================= GET SINGLE RECORD BY ID ================= */
-// 💡 This fixes your 404 error!
+/* ================= 4. GET SINGLE RECORD BY ID ================= */
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -52,7 +86,6 @@ router.get("/:id", async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ message: "Record not found" });
     }
-
     res.json(rows[0]); 
   } catch (err) {
     console.error("Fetch single record error:", err);
@@ -60,7 +93,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* ================= POST NEW RECORD ================= */
+/* ================= 5. POST NEW RECORD ================= */
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     const recordData = { ...req.body };
@@ -81,56 +114,43 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 });
 
-
-/* ================= UPDATE RECORD WITH FILE SUPPORT ================= */
+/* ================= 6. UPDATE RECORD ================= */
 router.put("/:id", upload.single("file"), async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
 
-    // If a new file was uploaded, add the new path to the update object
-    if (req.file) {
-      updateData.file_path = req.file.path;
-    }
-
-    // Remove fields that shouldn't be updated manually
+    if (req.file) updateData.file_path = req.file.path;
     delete updateData.id;
 
     const columns = Object.keys(updateData);
     const values = Object.values(updateData);
 
     if (columns.length === 0) {
-      return res.status(400).json({ message: "No data provided for update" });
+      return res.status(400).json({ message: "No data provided" });
     }
 
-    const setClause = columns.map((col) => `${col} = ?`).join(", ");
+    const setClause = columns.map((col) => `\`${col}\` = ?`).join(", ");
     const sql = `UPDATE records SET ${setClause} WHERE id = ?`;
 
     await db.query(sql, [...values, id]);
-
-    res.json({ 
-      message: "Record updated successfully", 
-      file_path: updateData.file_path // Send back the new path to update the UI
-    });
+    res.json({ message: "Record updated successfully" });
   } catch (err) {
     console.error("Update error:", err);
     res.status(500).json({ message: "Failed to update record" });
   }
 });
 
-/* ================= SOFT DELETE (TRASH) ================= */
+/* ================= 7. SOFT DELETE (TRASH) ================= */
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Instead of deleting the row, we just mark it as 'trashed'
     const sql = "UPDATE records SET status = 'trashed' WHERE id = ?";
     await db.query(sql, [id]);
-
     res.json({ message: "Record moved to trash" });
   } catch (err) {
-    console.error("Delete error:", err);
-    res.status(500).json({ message: "Failed to delete record" });
+    console.error("Soft delete error:", err);
+    res.status(500).json({ message: "Failed to trash record" });
   }
 });
 

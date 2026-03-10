@@ -53,18 +53,14 @@ export default function RecordsPage() {
     fetchRecords();
   }, []);
 
-  // Helper: Log an action
-  const logAction = async (action, extra = {}) => {
-    try {
-      await axios.post(
-        "http://localhost:5000/api/logs",
-        { action, user: user?.displayName, role: user?.role, ...extra},
-        { withCredentials: true }
-      );
-    } catch (warn) {
-      console.warn("Activity log could not be saved:", err.message);
-    }
-  };
+
+const logAction = async (action, details) => {
+  try {
+    await axios.post("http://localhost:5000/api/logs", { /* data */ });
+  } catch (error) { // <--- ADD THIS (error)
+    console.error("Log failed:", error); // <--- Use 'error' here
+  }
+};
 
   // Handle actions
   const handleView = async (rec) => {

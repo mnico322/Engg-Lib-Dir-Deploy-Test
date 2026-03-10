@@ -588,7 +588,7 @@ export const fieldConfig = {
             "Public (Metadata Only)", 
             "Public (Metadata & File)", 
             "Private (Staff Only)"
-          ]
+          ],
         },
       ],
 };
