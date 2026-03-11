@@ -1,8 +1,8 @@
 import express from "express";
 import { db } from "../db.js";
+import { logActivity } from "../backend/utils/logger.js"; // 1. Import the logger
 import multer from "multer";
-import path from "path";
-import fs from "fs"; // Only one import needed at the top
+import fs from "fs";
 
 const router = express.Router();
 
@@ -93,7 +93,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* ================= 5. POST NEW RECORD ================= */
+/* ================= 5. POST NEW RECORD (FIXED) ================= */
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     const recordData = { ...req.body };
@@ -107,7 +107,17 @@ router.post("/", upload.single("file"), async (req, res) => {
     const sql = `INSERT INTO records (${columns.join(", ")}) VALUES (${placeholders})`;
     const [result] = await db.query(sql, values);
 
-    res.status(201).json({ id: result.insertId, message: "Record saved successfully" });
+    // ✅ 2. ADD LOGGING HERE
+    await logActivity({
+      action: "ADD",
+      recordId: result.insertId,
+      title: req.body.title || "Untitled",
+      user: req.body.author || "System", 
+      role: req.cookies?.role || "librarian", // Pulling from cookies since you use them
+      description: `New record created in ${req.body.community || 'General'}`
+    });
+
+    res.status(201).json({ id: result.insertId, message: "Record saved and logged" });
   } catch (err) {
     console.error("Database Insert Error:", err);
     res.status(500).json({ message: "Failed to save record" });
@@ -141,12 +151,27 @@ router.put("/:id", upload.single("file"), async (req, res) => {
   }
 });
 
-/* ================= 7. SOFT DELETE (TRASH) ================= */
+/* ================= 7. SOFT DELETE (FIXED) ================= */
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
+
+    // ✅ 3. FETCH TITLE FIRST SO WE CAN LOG IT
+    const [record] = await db.query("SELECT title FROM records WHERE id = ?", [id]);
+    if (record.length === 0) return res.status(404).json({ message: "Not found" });
+
     const sql = "UPDATE records SET status = 'trashed' WHERE id = ?";
     await db.query(sql, [id]);
+
+    // ✅ 4. ADD LOGGING HERE
+    await logActivity({
+      action: "TRASH",
+      recordId: id,
+      title: record[0].title,
+      user: req.cookies?.username || "Librarian",
+      description: `Moved record to trash`
+    });
+
     res.json({ message: "Record moved to trash" });
   } catch (err) {
     console.error("Soft delete error:", err);
