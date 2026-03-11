@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const db = require('../config/db'); 
-const { logActivity } = require('../utils/logger'); 
-const { verifyToken } = require('../middleware/auth'); 
+const { logActivity } = require('../backend/utils/logger'); 
 
 // --- Configure Storage ---
 const storage = multer.diskStorage({
@@ -13,7 +12,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // --- 1. POST: Add a New Record ---
-router.post('/', verifyToken, upload.single('file'), async (req, res) => {
+router.post('/', upload.single('file'), async (req, res) => {
   try {
     const data = req.body;
     const file = req.file;
@@ -47,13 +46,13 @@ router.post('/', verifyToken, upload.single('file'), async (req, res) => {
     const recordTitle = req.body.title || "Untitled";
 
     // Call your logger properly
-    await logActivity(
-      userDisplayName,   // Pass the STRING name
-      "ADD",             // Action
-      result.insertId,   // The new ID
-      recordTitle,       // Title
-      `New record added to ${req.body.community}` // Description
-    );
+    await logActivity({
+      user: req.body.author || "System",
+      action: "ADD",
+      recordId: result.insertId,
+      title: req.body.title || "Untitled",
+      description: `New record added to ${req.body.community}`
+    });
 
     res.status(201).json({ message: "Record added successfully", id: result.insertId });
   } catch (err) {
@@ -63,7 +62,7 @@ router.post('/', verifyToken, upload.single('file'), async (req, res) => {
 });
 
 // --- 2. PATCH: Update an Existing Record ---
-router.patch('/:id', verifyToken, upload.single('file'), async (req, res) => {
+router.patch('/:id', upload.single('file'), async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
@@ -89,12 +88,13 @@ router.patch('/:id', verifyToken, upload.single('file'), async (req, res) => {
     const userId = req.user?.id || 0;
     const newTitle = data.title || existing[0].title;
 
-    await logActivity(
-      userId,
-      userName,
-      'UPDATE',
-      `Updated record: "${newTitle}" (ID: ${id}). Modified: ${Object.keys(updateData).join(', ')}`
-    );
+    await logActivity({
+      user: req.user?.displayName || "Librarian",
+      action: 'UPDATE',
+      recordId: id,
+      title: data.title || existing[0].title,
+      description: `Updated record: "${data.title || existing[0].title}" (ID: ${id})`
+    });
 
     res.json({ message: "Record updated successfully" });
   } catch (err) {
@@ -104,34 +104,28 @@ router.patch('/:id', verifyToken, upload.single('file'), async (req, res) => {
 });
 
 // --- 3. DELETE: Remove a Record ---
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Fetch info before it's gone
-    const [record] = await db.execute("SELECT title, community FROM records WHERE id = ?", [id]);
-    if (record.length === 0) return res.status(404).json({ error: "Record not found" });
-
-    const recordTitle = record[0].title || "Untitled";
+    const [record] = await db.execute("SELECT title FROM records WHERE id = ?", [id]);
+    
+    if (record.length === 0) return res.status(404).json({ error: "Not found" });
 
     await db.execute("DELETE FROM records WHERE id = ?", [id]);
 
-    // LOGGING
-    const userName = req.user?.displayName || req.user?.username || "Librarian";
-    const userId = req.user?.id || 0;
+    // ✅ FIX: Use the Librarian's name from req.user
+    await logActivity({
+      user: req.user?.displayName || "Librarian", 
+      action: "DELETE",
+      recordId: id,
+      title: record[0].title,
+      description: `Deleted record ID: ${id}`
+    });
 
-    await logActivity(
-      userId,
-      userName,
-      'DELETE',
-      `Deleted record: "${recordTitle}" (ID: ${id})`
-    );
-
-    res.json({ message: "Record deleted successfully" });
+    res.json({ message: "Deleted successfully" });
   } catch (err) {
-    console.error("Delete Error:", err);
-    res.status(500).json({ error: "Failed to delete record" });
+    console.error(err);
+    res.status(500).json({ error: "Delete failed" });
   }
-});
-
+}); 
 module.exports = router;

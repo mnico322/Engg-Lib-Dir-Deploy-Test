@@ -1,26 +1,24 @@
-// DIR\backend\utils\logger.js
-import { db } from "../../db.js"; // This goes up 2 levels (utils -> backend -> DIR) to find db.js
+import { db } from "../../db.js";
 
-export const logActivity = async (userId, action, resourceType, resourceId, title, description) => {
+export const logActivity = async ({ action, recordId, title, user, role, description }) => {
   try {
     const sql = `
       INSERT INTO activity_logs 
-      (user_id, action_type, resource_type, resource_id, title, description, created_at) 
+      (action, recordId, title, user, role, description, timestamp) 
       VALUES (?, ?, ?, ?, ?, ?, NOW())
     `;
     
     await db.query(sql, [
-      userId || null, 
-      action,           // 'ADD'
-      resourceType,     // 'RECORD'
-      resourceId || null, 
-      title || 'N/A', 
-      description || ''
+      action || "UNKNOWN",
+      recordId || null,
+      title || "N/A",
+      user || "System",      // Matches 'user' column
+      role || "guest",       // Matches 'role' column
+      description || ""      // Matches 'description' column
     ]);
     
-    console.log(`✔️ Activity Logged: ${action} - ${title}`);
+    console.log(`✔️ Logged to DB: ${action} by ${user}`);
   } catch (err) {
-    // This will show exactly why it fails in your terminal
-    console.error("Logging Error:", err.sqlMessage || err.message);
+    console.error("❌ Database Logger Error:", err.message);
   }
 };

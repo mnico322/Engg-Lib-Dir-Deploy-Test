@@ -48,7 +48,21 @@ export default function RecordDetails() {
   };
 
   useEffect(() => { fetchRecord(); }, [id]);
-
+  useEffect(() => {
+    // Only log once the record is successfully loaded and we have a user
+    if (record && !loading) {
+      axios.post("http://localhost:5000/api/logs", {
+        action: "VIEW",
+        recordId: id,
+        title: record.title,
+        user: userData?.displayName || "Nico",
+        role: userData?.role || "Guest",
+        description: `Viewed record: ${record.title}`
+      }, { withCredentials: true })
+      .then(() => console.log("View logged successfully"))
+      .catch(err => console.error("Logging view failed", err));
+    }
+  }, [record, loading, id, userData]);
   if (loading) return <div className="p-6 text-gray-600">Loading...</div>;
   if (!record) return null;
 
@@ -78,6 +92,25 @@ export default function RecordDetails() {
       toast.error("Failed to update record");
     }
   };
+  const handleDelete = async () => {
+  try {
+    // We pass the user and role in the 'data' object 
+    // because DELETE requests don't have a standard 'body' like POST
+    await axios.delete(`http://localhost:5000/api/records/${id}`, {
+      withCredentials: true,
+      data: { 
+        user: userData?.displayName || "Nico", 
+        role: userData?.role || "Librarian" 
+      }
+    });
+
+    toast.success("Archived successfully");
+    navigate("/records");
+  } catch (err) {
+    console.error("Delete failed:", err);
+    toast.error("Delete failed");
+  }
+};
 
   const handleChange = (e) => {
     setRecord((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -229,13 +262,12 @@ export default function RecordDetails() {
             <p className="text-sm text-gray-500 mb-8 px-4">This record will be moved to the trash.</p>
             <div className="flex gap-3">
               <button onClick={() => setShowConfirmModal(false)} className="flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-gray-600 transition">Cancel</button>
-              <button onClick={async () => {
-                try {
-                  await axios.delete(`http://localhost:5000/api/records/${id}`, { withCredentials: true });
-                  toast.success("Archived successfully");
-                  navigate("/records");
-                } catch (err) { toast.error("Delete failed"); }
-              }} className="flex-1 px-4 py-3 text-sm font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition">Delete</button>
+              <button 
+  onClick={handleDelete} 
+  className="flex-1 px-4 py-3 text-sm font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition"
+>
+  Delete
+</button>
             </div>
           </div>
         </div>
