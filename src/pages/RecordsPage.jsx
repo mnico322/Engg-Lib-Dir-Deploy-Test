@@ -56,16 +56,22 @@ export default function RecordsPage() {
 
 const logAction = async (action, details) => {
   try {
-    await axios.post("http://localhost:5000/api/logs", { /* data */ });
-  } catch (error) { // <--- ADD THIS (error)
-    console.error("Log failed:", error); // <--- Use 'error' here
+    await axios.post("http://localhost:5000/api/logs", {
+      action: action.toUpperCase(), // Match the "VIEW" or "DELETE" format
+      title: details.title,
+      user: user?.displayName || "Nico", // Using 'user' from your AuthContext
+      role: user?.role || "Guest",
+      description: `${action} record: ${details.title}`
+    }, { withCredentials: true });
+    console.log("Action logged successfully");
+  } catch (error) {
+    console.error("Log failed:", error);
   }
 };
 
   // Handle actions
   const handleView = async (rec) => {
     navigate(`/records/${rec.id}`, { state: { record: rec } });
-    await logAction("view", { recordId: rec.id, title: rec.title });
   };
 
   const handleAddRecord = () => {
@@ -75,22 +81,24 @@ const logAction = async (action, details) => {
 
   const handleDelete = async (id) => {
     try {
+      // Find the record locally just for the toast message
       const record = records.find((r) => r.id === id);
-      await axios.put(`http://localhost:5000/api/records/${id}/trash`, {}, { withCredentials: true });
 
-      toast.success(`Record "${record?.title || "(no title)"}" moved to trash.`);
-      setConfirmDelete(null);
-      fetchRecords();
-
-      await logAction("delete", {
-        recordId: id,
-        title: record?.title || "(no title)",
-        accessCode: record?.accessCode || "-",
-        locationCode: record?.locationCode || "-",
+      await axios.delete(`http://localhost:5000/api/records/${id}`, {
+        withCredentials: true,
+        data: { 
+          user: user?.displayName || "Nico", 
+          role: user?.role || "Librarian" 
+        }
       });
+
+      toast.success(`Record "${record?.title || "Record"}" moved to trash.`);
+      setConfirmDelete(null);
+      fetchRecords(); // Refresh table
+      
     } catch (err) {
-      console.error("Error deleting record:", err);
-      toast.error("Failed to move record to trash.");
+      console.error("Delete failed:", err);
+      toast.error("Failed to delete record.");
     }
   };
 

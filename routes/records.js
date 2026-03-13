@@ -104,28 +104,29 @@ router.patch('/:id', upload.single('file'), async (req, res) => {
 });
 
 // --- 3. DELETE: Remove a Record ---
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [record] = await db.execute("SELECT title FROM records WHERE id = ?", [id]);
+// router.delete('/:id', async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const [record] = await db.execute("SELECT title FROM records WHERE id = ?", [id]);
     
-    if (record.length === 0) return res.status(404).json({ error: "Not found" });
+//     if (record.length === 0) return res.status(404).json({ error: "Not found" });
 
-    await db.execute("DELETE FROM records WHERE id = ?", [id]);
+//     await db.execute("DELETE FROM records WHERE id = ?", [id]);
 
-    // ✅ FIX: Use the Librarian's name from req.user
-    await logActivity({
-      user: req.user?.displayName || "Librarian", 
-      action: "DELETE",
-      recordId: id,
-      title: record[0].title,
-      description: `Deleted record ID: ${id}`
-    });
+//     // ✅ FIX: Use the Librarian's name from req.user
+//     console.log("LOGGING REQ BODY:", req.body);
+//     await logActivity({
+//       user: req.body.user || "Libryan", 
+//       action: "DELETE",
+//       recordId: id,
+//       title: record[0].title,
+//       description: `Deleted record ID: ${id}`
+//     });
 
-    res.json({ message: "Deleted successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Delete failed" });
-  }
-}); 
+//     res.json({ message: "Deleted successfully" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Delete failed" });
+//   }
+// }); 
 module.exports = router;

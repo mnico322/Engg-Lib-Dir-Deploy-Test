@@ -140,7 +140,7 @@ const fetchRecords = async () => {
                         onClick={() => setConfirmAction({ type: "delete", record: rec })}
                         className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-bold border border-red-200 transition"
                       >
-                        Purge
+                        DELETE PERMENENTLY
                       </button>
                     </td>
                   </tr>

@@ -87,6 +87,8 @@ export default function AddRecord() {
 
     try {
       const payload = new FormData();
+      payload.append("userName", userData?.displayName || "Nico");
+      payload.append("userRole", userData?.role || "Librarian");
       payload.append("community", selectedCommunity);
       payload.append("collection", selectedCollection);
       payload.append("subCollection", selectedSubCollection);
