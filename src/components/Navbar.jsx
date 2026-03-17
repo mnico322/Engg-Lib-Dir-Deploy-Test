@@ -56,8 +56,8 @@ export default function Navbar() {
         >
 
           {(user?.role === "librarian" || user?.role === "guest") && (
-            <Link to="/records" className={linkClass("/records")}>
-              Home
+            <Link to="/Dashboard" className={linkClass("/Dashboard")}>
+              Dashboard
             </Link>
           )}
           {(user?.role === "admin") && (
