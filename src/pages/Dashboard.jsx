@@ -1,254 +1,151 @@
-// src/pages/RecordDetails.jsx
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { fieldConfig } from "../config/fieldConfig";
-import toast from "react-hot-toast";
+import axios from "axios";
 
-export default function RecordDetails({ records = [] }) {
-  const { id } = useParams();
+export default function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { userData, currentUser } = useAuth();
+  const [records, setRecords] = useState([]);
+  const [stats, setStats] = useState({ totalRecords: 0, totalUsers: 0, totalTrash: 0 });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const [record, setRecord] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const role = user?.role?.toLowerCase() || "guest";
+  const isAdmin = role === "admin";
 
   useEffect(() => {
-    // Simulate fetching record from local "records" prop
-    const rec = records.find((r) => r.id === id);
-    if (rec) {
-      setRecord({
-        ...rec,
-        dateCreated: rec.dateCreated
-          ? new Date(rec.dateCreated).toISOString().split("T")[0]
-          : "",
-      });
+    const fetchDashboardData = async () => {
+      try {
+        const recordsRes = await axios.get("http://localhost:5000/api/records", { withCredentials: true });
+        const recordsData = Array.isArray(recordsRes.data) ? recordsRes.data : (recordsRes.data.records || []);
+        setRecords(recordsData.filter(r => r.status !== "trashed"));
+
+        if (isAdmin) {
+          const statsRes = await axios.get("http://localhost:5000/api/admin/stats", { withCredentials: true });
+          setStats(statsRes.data);
+        }
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!authLoading) fetchDashboardData();
+  }, [authLoading, isAdmin]);
+
+  const globalRecent = [...records]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 5);
+
+  const myRecent = records
+    .filter(r => String(r.user_id) === String(user?.id))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 5);
+
+  const handleQuickSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/records?search=${encodeURIComponent(searchTerm)}`);
     }
-  }, [id, records]);
-
-  if (!record) return <div className="p-6 text-gray-600">Loading...</div>;
-
-  const role = userData?.role || "guest";
-  const isEditable = role === "librarian" || role === "admin";
-
-  // Save changes (simulate update)
-  const handleUpdate = () => {
-    // In local mode, we just show a toast
-    toast.success("Record updated successfully (simulated).");
-    setEditMode(false);
   };
 
-  // Move record to trash (simulate delete)
-  const handleDelete = () => {
-    toast.success("Record moved to trash (simulated).");
-    setShowConfirmModal(false);
-    navigate("/records");
-  };
-
-  // Handle input change
-  const handleChange = (e) => {
-    setRecord({ ...record, [e.target.name]: e.target.value });
-  };
-
-  // Dropdown options
-  const communityOptions = Object.keys(fieldConfig);
-  const collectionOptions = record.community
-    ? Object.keys(fieldConfig[record.community]?.collections || {})
-    : [];
-  const subCollectionOptions =
-    record.community && record.collection
-      ? Object.keys(
-          fieldConfig[record.community]?.collections[record.collection]
-            ?.subCollections || {}
-        )
-      : [];
-  const subSubCollectionOptions =
-    record.community && record.collection && record.subCollection
-      ? Object.keys(
-          fieldConfig[record.community]?.collections[record.collection]
-            ?.subCollections[record.subCollection]?.subSubCollections || {}
-        )
-      : [];
-
-  // Dynamic fields
-  const currentFields = (() => {
-    if (record.subSubCollection) {
-      return (
-        fieldConfig[record.community]?.collections[record.collection]
-          ?.subCollections[record.subCollection]?.subSubCollections[
-          record.subSubCollection
-        ] || []
-      );
-    }
-    if (record.subCollection) {
-      return (
-        fieldConfig[record.community]?.collections[record.collection]
-          ?.subCollections[record.subCollection] || []
-      );
-    }
-    if (record.collection) {
-      return fieldConfig[record.community]?.collections[record.collection] || [];
-    }
-    return [];
-  })();
+  if (authLoading || loading) return <div className="p-10 text-center">Loading Dashboard...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
-      {/* Breadcrumb */}
-      <div className="text-sm text-gray-600 mb-4">
-        <Link to="/records" className="text-blue-600 hover:underline">
-          ← Back to Records
-        </Link>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-6 text-[#000000]">Record Details</h2>
-
-      {/* Path Section */}
-      <div className="mb-6 space-y-3">
-        <div>
-          <span className="font-semibold">Community: </span>
-          {record.community || "—"}
+    <div className="p-6 max-w-7xl mx-auto space-y-8 bg-gray-50 min-h-screen">
+      
+      {/* Header Section */}
+      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome, {user?.displayName || "User"}</h1>
+          
+          {/* Conditionally hide search bar for Admin */}
+          {!isAdmin && (
+            <form onSubmit={handleQuickSearch} className="relative">
+              <input
+                type="text"
+                placeholder="Quick search by title or author..."
+                className="w-full pl-6 pr-32 py-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button type="submit" className="absolute right-2 top-2 bottom-2 bg-orange-500 text-white px-6 rounded-xl font-bold hover:bg-orange-600 transition">
+                Search
+              </button>
+            </form>
+          )}
         </div>
-        {record.collection && (
-          <div>
-            <span className="font-semibold">Collection: </span>
-            {record.collection || "—"}
-          </div>
-        )}
-        {record.subCollection && (
-          <div>
-            <span className="font-semibold">Sub-Collection: </span>
-            {record.subCollection || "—"}
-          </div>
-        )}
-        {record.subSubCollection && (
-          <div>
-            <span className="font-semibold">Sub-Sub-Collection: </span>
-            {record.subSubCollection || "—"}
-          </div>
-        )}
       </div>
 
-      {/* Dynamic Fields */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {currentFields.map((field) => (
-          <div key={field.name}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {field.label}
-            </label>
-            {editMode && isEditable ? (
-              field.type === "select" ? (
-                <select
-                  name={field.name}
-                  value={record[field.name] || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                >
-                  <option value="">Select</option>
-                  {field.options.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              ) : field.type === "textarea" ? (
-                <textarea
-                  name={field.name}
-                  value={record[field.name] || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                />
-              ) : (
-                <input
-                  type={field.type || "text"}
-                  name={field.name}
-                  value={record[field.name] || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                />
-              )
-            ) : (
-              <div className="text-gray-800 bg-gray-100 px-3 py-2 rounded">
-                {record[field.name] || "—"}
-              </div>
+      {/* Admin Only Stats Section */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard title="Total Records" value={stats.totalRecords} color="text-blue-600" />
+          <StatCard title="System Users" value={stats.totalUsers} color="text-green-600" />
+          <StatCard title="Items in Trash" value={stats.totalTrash} color="text-red-600" />
+        </div>
+      )}
+
+      {/* Feed Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-5 border-b border-gray-50 flex items-center justify-between">
+            <h2 className="font-bold text-gray-800 text-sm">MY RECENT UPLOADS</h2>
+            <Link to="/records" className="text-xs font-bold text-orange-600 hover:underline">VIEW ALL</Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {myRecent.length > 0 ? myRecent.map(rec => (
+              <RecordRow key={rec.id} record={rec} navigate={navigate} />
+            )) : (
+              <p className="p-10 text-center text-gray-400 text-sm">No uploads detected.</p>
             )}
           </div>
-        ))}
+        </section>
 
-        {/* File field */}
-        {record.fileUrl && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Attached File
-            </label>
-            <a
-              href={record.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              View / Download File
-            </a>
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-5 border-b border-gray-50 flex items-center justify-between">
+            <h2 className="font-bold text-gray-800 text-sm">LATEST ARCHIVE ADDITIONS</h2>
+            <Link to="/records" className="text-xs font-bold text-blue-600 hover:underline">VIEW ALL</Link>
           </div>
-        )}
+          <div className="divide-y divide-gray-50">
+            {globalRecent.length > 0 ? globalRecent.map(rec => (
+              <RecordRow key={rec.id} record={rec} navigate={navigate} />
+            )) : (
+              <p className="p-10 text-center text-gray-400 text-sm">No recent records.</p>
+            )}
+          </div>
+        </section>
       </div>
+    </div>
+  );
+}
 
-      {/* Actions */}
-      {isEditable && (
-        <div className="flex justify-between items-center">
-          {!editMode ? (
-            <button
-              onClick={() => setEditMode(true)}
-              className="bg-[#ff8400] text-white px-4 py-2 rounded hover:brightness-110"
-            >
-              Edit
-            </button>
-          ) : (
-            <button
-              onClick={handleUpdate}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              Save Changes
-            </button>
-          )}
+function StatCard({ title, value, color }) {
+  return (
+    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+      <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">{title}</p>
+      <p className={`text-3xl font-black ${color}`}>{value}</p>
+    </div>
+  );
+}
 
-          <button
-            onClick={() => setShowConfirmModal(true)}
-            className="text-red-600 border border-red-600 px-4 py-2 rounded hover:bg-red-50"
-          >
-            Delete
-          </button>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/25 flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Confirm Deletion
-            </h3>
-            <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to move this record to trash?
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+function RecordRow({ record, navigate }) {
+  return (
+    <div 
+      onClick={() => navigate(`/records/${record.id}`)}
+      className="p-4 hover:bg-gray-50 cursor-pointer flex items-center justify-between group"
+    >
+      <div className="flex-grow min-w-0">
+        <h3 className="text-sm font-semibold text-gray-800 truncate group-hover:text-orange-600">{record.title}</h3>
+        <p className="text-[10px] text-gray-400 uppercase font-bold">{record.author || "System"}</p>
+      </div>
+      <div className="ml-4 text-right">
+        <span className="text-[10px] font-bold text-gray-300">
+          {new Date(record.created_at).toLocaleDateString()}
+        </span>
+      </div>
     </div>
   );
 }

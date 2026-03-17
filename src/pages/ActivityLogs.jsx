@@ -90,7 +90,7 @@ export default function ActivityLogs() {
             onClick={exportToCSV}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition flex items-center gap-2 whitespace-nowrap"
           >
-            📥 Export CSV
+            Export CSV
           </button>
           <input
             type="text"
