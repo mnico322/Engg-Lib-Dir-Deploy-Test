@@ -54,9 +54,17 @@ export default function Navbar() {
             menuOpen ? "block" : "hidden"
           } sm:flex space-x-4 items-center absolute sm:static top-[64px] left-0 w-full sm:w-auto bg-white sm:bg-transparent sm:p-0 p-4`}
         >
-          <Link to="/" className={linkClass("/")}>
-            Home
-          </Link>
+
+          {(user?.role === "librarian" || user?.role === "guest") && (
+            <Link to="/records" className={linkClass("/records")}>
+              Home
+            </Link>
+          )}
+          {(user?.role === "admin") && (
+            <Link to="/dashboard" className={linkClass("/records")}>
+              Admin Dashboard
+            </Link>
+          )}
 
           {(user?.role === "librarian" || user?.role === "guest") && (
             <Link to="/records" className={linkClass("/records")}>
@@ -73,7 +81,7 @@ export default function Navbar() {
           {user?.role === "admin" && (
             <>
               <Link to="/admin" className={linkClass("/admin")}>
-                Admin Dashboard
+                Account Administration
               </Link>
               <Link to="/logs" className={linkClass("/logs")}>
                 Logs
