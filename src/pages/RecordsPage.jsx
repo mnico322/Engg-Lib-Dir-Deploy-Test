@@ -9,40 +9,24 @@ export default function RecordsPage() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const navigate = useNavigate();
   
-  // ✅ Extract 'user' and 'loading' from AuthContext
   const { user, loading } = useAuth();
 
-  // Pagination state
+  // Pagination & Filter state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  // Filter state
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 🔹 Wait for auth to load before rendering content
   if (loading) return <p className="p-6 text-center">Loading authentication...</p>;
 
-  // 🔹 Use 'user' instead of 'userData'
   const role = user?.role || "guest";
   const canEdit = ["admin", "librarian"].includes(role);
 
   // Fetch records from MySQL
   const fetchRecords = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/records",
-        { withCredentials: true }
-      );
-
-      const recordsArray = Array.isArray(res.data)
-        ? res.data
-        : res.data.records || [];
-
-      const data = recordsArray.filter(
-        (r) => r.status !== "trashed"
-      );
-
-      setRecords(data);
+      const res = await axios.get("http://localhost:5000/api/records", { withCredentials: true });
+      // The backend now returns the array directly
+      setRecords(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Failed to fetch records:", err);
       toast.error("Failed to fetch records.");
@@ -53,81 +37,74 @@ export default function RecordsPage() {
     fetchRecords();
   }, []);
 
+  const logAction = async (action, details) => {
+    try {
+      await axios.post("http://localhost:5000/api/logs", {
+        action: action.toUpperCase(),
+        title: details.title,
+        user: user?.displayName || "Nico",
+        role: user?.role || "Guest",
+        description: `${action} record: ${details.title}`
+      }, { withCredentials: true });
+    } catch (error) {
+      console.error("Log failed:", error);
+    }
+  };
 
-const logAction = async (action, details) => {
-  try {
-    await axios.post("http://localhost:5000/api/logs", {
-      action: action.toUpperCase(), // Match the "VIEW" or "DELETE" format
-      title: details.title,
-      user: user?.displayName || "Nico", // Using 'user' from your AuthContext
-      role: user?.role || "Guest",
-      description: `${action} record: ${details.title}`
-    }, { withCredentials: true });
-    console.log("Action logged successfully");
-  } catch (error) {
-    console.error("Log failed:", error);
-  }
-};
-
-  // Handle actions
-  const handleView = async (rec) => {
+  const handleView = (rec) => {
     navigate(`/records/${rec.id}`, { state: { record: rec } });
   };
 
   const handleAddRecord = () => {
     navigate("/records/add");
-    logAction("navigate-add");
   };
 
   const handleDelete = async (id) => {
     try {
-      // Find the record locally just for the toast message
       const record = records.find((r) => r.id === id);
-
       await axios.delete(`http://localhost:5000/api/records/${id}`, {
         withCredentials: true,
-        data: { 
-          user: user?.displayName || "Nico", 
-          role: user?.role || "Librarian" 
-        }
+        data: { user: user?.displayName || "Nico", role: user?.role || "Librarian" }
       });
 
       toast.success(`Record "${record?.title || "Record"}" moved to trash.`);
       setConfirmDelete(null);
-      fetchRecords(); // Refresh table
-      
+      fetchRecords(); 
     } catch (err) {
-      console.error("Delete failed:", err);
       toast.error("Failed to delete record.");
     }
   };
 
   const handleDownload = async (rec) => {
-    if (!rec.filePath) {
+    if (!rec.file_path) { // 🔹 Updated to underscore match SQL
       toast.error("No file attached.");
       return;
     }
     try {
-      const res = await axios.get(`http://localhost:5000/api/records/${rec.id}/file`, { responseType: "blob", withCredentials: true });
+      const res = await axios.get(`http://localhost:5000/api/records/${rec.id}/file`, { 
+        responseType: "blob", 
+        withCredentials: true 
+      });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", rec.fileName || "file");
+      // Extract filename from path or use default
+      link.setAttribute("download", rec.title || "document");
       document.body.appendChild(link);
       link.click();
       link.remove();
-
-      await logAction("download", { recordId: rec.id, title: rec.title });
+      await logAction("download", { title: rec.title });
     } catch (err) {
-      console.error("Failed to download file:", err);
       toast.error("Failed to download file.");
     }
   };
 
-  // Pagination
+  // Filter based on Title or Keywords
   const filteredRecords = records.filter((rec) =>
-    (rec.title || "").toLowerCase().includes(searchTerm.toLowerCase())
+    (rec.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (rec.keywords || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+
   const totalPages = Math.ceil(filteredRecords.length / pageSize) || 1;
   const paginatedRecords = filteredRecords.slice(
     (currentPage - 1) * pageSize,
@@ -135,110 +112,111 @@ const logAction = async (action, details) => {
   );
 
   const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > totalPages) return;
-    setCurrentPage(newPage);
+    if (newPage >= 1 && newPage <= totalPages) setCurrentPage(newPage);
   };
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-        <h1 className="text-xl font-bold">Records</h1>
+        <h1 className="text-xl font-bold">Archives Index</h1>
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search by Title..."
+            placeholder="Search by Title or Keywords..."
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border p-2 rounded flex-grow"
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="border p-2 rounded flex-grow min-w-[300px]"
           />
-          {/* ✅ This button will now show correctly for admin/librarian */}
           {canEdit && (
-            <button
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded whitespace-nowrap transition-colors"
-              onClick={handleAddRecord}
-            >
+            <button onClick={handleAddRecord} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded">
               Add Record
             </button>
           )}
         </div>
       </div>
 
-      {/* Records Table */}
       <div className="bg-white shadow rounded p-4 overflow-x-auto">
         {paginatedRecords.length === 0 ? (
           <p className="text-gray-500">No records found.</p>
         ) : (
           <>
             <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-[#e8e8e8] text-black">
-                  <th className="p-3 text-left border-b border-gray-300">Access Code</th>
-                  <th className="p-3 text-left border-b border-gray-300">Location Code</th>
-                  <th className="p-3 text-left border-b border-gray-300">Author</th>
-                  <th className="p-3 text-left border-b border-gray-300">Title</th>
-                  <th className="p-3 text-left border-b border-gray-300">Date Encoded</th>
-                  <th className="p-3 text-center border-b border-gray-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedRecords.map((rec, idx) => (
-                  <tr key={rec.id} className={`hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
-                    <td className="p-3 border-b border-gray-200">{rec.accessCode || "-"}</td>
-                    <td className="p-3 border-b border-gray-200">{rec.locationCode || "-"}</td>
-                    <td className="p-3 border-b border-gray-200">{rec.creator || rec.author || "-"}</td>
-                    <td className="p-3 border-b border-gray-200 font-medium">{rec.title || "-"}</td>
-                    <td className="p-3 border-b border-gray-200">{rec.dateEncoded ? new Date(rec.dateEncoded).toLocaleDateString() : "-"}</td>
-                    <td className="p-3 border-b border-gray-200 text-center space-x-2">
-                      <button onClick={() => handleView(rec)} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors">View</button>
-                      {rec.filePath && (
-                        <button onClick={() => handleDownload(rec)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs transition-colors">
-                          Download
-                        </button>
-                      )}
-                      {canEdit && (
-                        <button onClick={() => setConfirmDelete(rec)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors">
-                          Delete
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <thead>
+          <tr className="bg-[#e8e8e8] text-black">
+            <th className="p-3 text-left border-b border-gray-300">Box #</th>
+            <th className="p-3 text-left border-b border-gray-300">Title</th>
+            <th className="p-3 text-left border-b border-gray-300">Publisher</th>
+            <th className="p-3 text-left border-b border-gray-300">Type</th>
+            {/* 🔹 Added Keywords Header */}
+            <th className="p-3 text-left border-b border-gray-300">Keywords</th>
+            <th className="p-3 text-center border-b border-gray-300">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedRecords.map((rec, idx) => (
+            <tr key={rec.id} className={`hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+              <td className="p-3 border-b border-gray-200">{rec.box_number || "-"}</td>
+              <td className="p-3 border-b border-gray-200 font-medium max-w-xs truncate">
+                {rec.title || "-"}
+              </td>
+              <td className="p-3 border-b border-gray-200">{rec.publisher || "-"}</td>
+              <td className="p-3 border-b border-gray-200">{rec.content_type || "-"}</td>
+              
+              {/* 🔹 Added Keywords Data Cell */}
+              <td className="p-3 border-b border-gray-200 max-w-xs">
+                <div className="flex flex-wrap gap-1">
+                  {rec.keywords ? (
+                    rec.keywords.split('\n').slice(0, 2).map((word, i) => (
+                      <span key={i} className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-blue-100">
+                        {word.trim()}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 italic text-xs">None</span>
+                  )}
+                  {/* Show a "..." if there are more than 2 keywords */}
+                  {rec.keywords?.split('\n').length > 2 && <span className="text-gray-400 text-xs">...</span>}
+                </div>
+              </td>
 
-            {/* Pagination */}
-            <div className="flex justify-between items-center mt-4 flex-wrap gap-3">
-              <div>
-                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors">Prev</button>
-                <span className="mx-2">Page {currentPage} of {totalPages}</span>
-                <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors">Next</button>
-              </div>
+              <td className="p-3 border-b border-gray-200 text-center space-x-2 whitespace-nowrap">
+                <button onClick={() => handleView(rec)} className="bg-blue-500 text-white px-3 py-1 rounded text-xs">View</button>
+                {rec.file_path && (
+                  <button onClick={() => handleDownload(rec)} className="bg-green-500 text-white px-3 py-1 rounded text-xs">Download</button>
+                )}
+                {canEdit && (
+                  <button onClick={() => setConfirmDelete(rec)} className="bg-red-500 text-white px-3 py-1 rounded text-xs">Delete</button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+            {/* Pagination Controls */}
+            <div className="flex justify-between items-center mt-4">
               <div className="flex items-center gap-2">
-                <label htmlFor="pageSize" className="font-medium text-sm text-gray-700">Rows per page:</label>
-                <select id="pageSize" className="border p-1 rounded text-sm" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}>
-                  {[10, 50, 100].map((size) => (<option key={size} value={size}>{size}</option>))}
-                </select>
+                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
               </div>
+              <select className="border p-1 rounded text-sm" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}>
+                {[10, 50, 100].map((size) => (<option key={size} value={size}>{size} rows</option>))}
+              </select>
             </div>
           </>
         )}
       </div>
 
       {/* Delete Modal */}
-      {confirmDelete && canEdit && (
+      {confirmDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
-          <div className="bg-white p-6 rounded shadow-xl w-full max-w-md border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Delete</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to move the record <strong>{confirmDelete.title || "(no title)"}</strong> to trash?
-            </p>
+          <div className="bg-white p-6 rounded shadow-xl w-full max-w-md">
+            <h3 className="text-lg font-bold mb-2">Move to Trash?</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to trash <strong>{confirmDelete.title}</strong>?</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded text-gray-700 font-medium transition-colors">Cancel</button>
-              <button onClick={() => handleDelete(confirmDelete.id)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium transition-colors shadow-sm">Confirm Delete</button>
+              <button onClick={() => setConfirmDelete(null)} className="bg-gray-100 px-4 py-2 rounded">Cancel</button>
+              <button onClick={() => handleDelete(confirmDelete.id)} className="bg-red-600 text-white px-4 py-2 rounded">Move to Trash</button>
             </div>
           </div>
         </div>

@@ -56,12 +56,12 @@ export default function Navbar() {
         >
 
           {(user?.role === "librarian" || user?.role === "guest") && (
-            <Link to="/Dashboard" className={linkClass("/Dashboard")}>
+            <Link to="/librariandashboard" className={linkClass("/librariandashboard")}>
               Dashboard
             </Link>
           )}
           {(user?.role === "admin") && (
-            <Link to="/dashboard" className={linkClass("/records")}>
+            <Link to="/admindashboard" className={linkClass("/admindashboard")}>
               Admin Dashboard
             </Link>
           )}
@@ -80,7 +80,7 @@ export default function Navbar() {
 
           {user?.role === "admin" && (
             <>
-              <Link to="/admin" className={linkClass("/admin")}>
+              <Link to="/admincontrols" className={linkClass("/admincontrols")}>
                 Account Administration
               </Link>
               <Link to="/logs" className={linkClass("/logs")}>

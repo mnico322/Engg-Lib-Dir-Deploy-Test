@@ -7,7 +7,7 @@ import { useAuth } from "./context/AuthContext"; // 🔥 Import useAuth
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AdminDashboard from "./pages/AdminDashboard";
+import AccountAdministration from "./pages/AccountAdministration";
 import ActivityLogs from "./pages/ActivityLogs";
 import RecordsPage from "./pages/RecordsPage";
 import TrashedRecords from "./pages/TrashedRecords";
@@ -15,7 +15,8 @@ import Logout from "./pages/Logout";
 import RecordDetails from "./pages/RecordDetails";
 import ProfileSettings from "./pages/ProfileSettings";
 import AddRecord from "./pages/AddRecord";
-import Dashboard from "./pages/Dashboard";
+import LibrarianDashboard from "./pages/LibrarianDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -71,7 +72,8 @@ export default function App() {
             {/* Profile Settings: any logged-in user */}
             <Route element={<PrivateRoute allowedRoles={["admin", "librarian", "guest"]} />}>
               <Route path="/profile" element={<ProfileSettings />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/librariandashboard" element={<LibrarianDashboard />} />
+              <Route path="/admindashboard" element={<AdminDashboard />} />
             </Route>
 
             {/* Records routes */}
@@ -88,7 +90,7 @@ export default function App() {
 
             {/* Admin routes */}
             <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admincontrols" element={<AccountAdministration />} />
               <Route path="/logs" element={<ActivityLogs />} />
             </Route>
 
