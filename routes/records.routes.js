@@ -128,32 +128,52 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 });
 
-  /* ================= 6. UPDATE RECORD ================= */
-  router.put("/:id", upload.single("file"), async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updateData = { ...req.body };
+ /* ================= 6. UPDATE RECORD (FIXED COLUMN NAME) ================= */
+router.put("/:id", upload.single("file"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userName, userRole, ...dataForDatabase } = req.body;
+    
+    const updateData = { ...dataForDatabase };
 
-      if (req.file) updateData.file_path = req.file.path;
-      delete updateData.id;
-
-      const columns = Object.keys(updateData);
-      const values = Object.values(updateData);
-
-      if (columns.length === 0) {
-        return res.status(400).json({ message: "No data provided" });
-      }
-
-      const setClause = columns.map((col) => `\`${col}\` = ?`).join(", ");
-      const sql = `UPDATE records SET ${setClause} WHERE id = ?`;
-
-      await db.query(sql, [...values, id]);
-      res.json({ message: "Record updated successfully" });
-    } catch (err) {
-      console.error("Update error:", err);
-      res.status(500).json({ message: "Failed to update record" });
+    // Use filePath (camelCase) to match your database schema
+    if (req.file) {
+      updateData.filePath = req.file.path; 
     }
-  });
+    
+    // Clean up fields that aren't columns or shouldn't be updated
+    delete updateData.id;
+    delete updateData.created_at;
+    delete updateData.updated_at;
+    delete updateData.file_path; // Delete the snake_case version if it exists in req.body
+
+    const columns = Object.keys(updateData);
+    const values = Object.values(updateData);
+
+    if (columns.length === 0) {
+      return res.status(400).json({ message: "No data provided" });
+    }
+
+    const setClause = columns.map((col) => `\`${col}\` = ?`).join(", ");
+    const sql = `UPDATE records SET ${setClause} WHERE id = ?`;
+
+    await db.query(sql, [...values, id]);
+
+    await logActivity({
+      action: "UPDATE",
+      recordId: id,
+      title: updateData.title || "Updated Record",
+      user: userName || "System",
+      role: userRole || "Librarian",
+      description: `Updated record details for "${updateData.title || id}"`
+    });
+
+    res.json({ message: "Record updated successfully" });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ message: "Failed to update record" });
+  }
+});
 
   /* ================= 7. SOFT DELETE (FIXED) ================= */
   /* ================= 7. SOFT DELETE (FIXED) ================= */

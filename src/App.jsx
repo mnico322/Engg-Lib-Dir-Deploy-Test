@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useAuth } from "./context/AuthContext"; // 🔥 Import useAuth
+import { useAuth } from "./context/AuthContext";
 
 // Pages
 import Home from "./pages/Home";
@@ -16,16 +16,19 @@ import RecordDetails from "./pages/RecordDetails";
 import ProfileSettings from "./pages/ProfileSettings";
 import AddRecord from "./pages/AddRecord";
 import Dashboard from "./pages/Dashboard";
+import AccountAdministration from "./pages/AccountAdministration";
+import LibrarianDashboard from "./pages/LibrarianDashboard";
+
+
+
 
 // Components
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
 
-
-
 export default function App() {
-  const { userData, loading } = useAuth(); // 🔥 Destructure userData to check auth status
+  const { userData, loading } = useAuth();
 
   if (loading) {
     return (
@@ -53,7 +56,7 @@ export default function App() {
 
         <main className="flex-grow">
           <Routes>
-            {/* ✅ Public routes with "Logged-in" check */}
+            {/* Public routes with Logged-in check */}
             <Route path="/" element={<Home />} />
             
             <Route 
@@ -79,6 +82,7 @@ export default function App() {
               <Route path="/records" element={<RecordsPage />} />
               <Route path="/records/:id" element={<RecordDetails />} />
               <Route path="/records/add" element={<AddRecord />} />
+              <Route path="/records/edit/:id" element={<AddRecord />} />
             </Route>
 
             {/* Trash (librarian only) */}

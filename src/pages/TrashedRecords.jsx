@@ -7,42 +7,36 @@ import toast from "react-hot-toast";
 export default function TrashedRecords() {
   const [records, setRecords] = useState([]);
   const [confirmAction, setConfirmAction] = useState(null); // {type: "restore"|"delete", record}
-  const { userData } = useAuth();
-  const role = userData?.role || "guest";
-
-  // Pagination & Filter state
+  const { userData, loading } = useAuth();
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const role = userData?.role || "guest";
 
-const fetchRecords = async () => {
-  try {
-    // Point to the new /trashed endpoint
-    const res = await axios.get("http://localhost:5000/api/records/trashed", { 
-      withCredentials: true 
-    });
-    
-    // The backend now returns only trashed items
-    setRecords(res.data?.records || []);
-  } catch (err) {
-    console.error("Error fetching trashed records:", err);
-    toast.error("Failed to load trashed records.");
-  }
-};
+  const fetchRecords = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/records/trashed", { 
+        withCredentials: true 
+      });
+      setRecords(res.data?.records || []);
+    } catch (err) {
+      console.error("Error fetching trashed records:", err);
+      toast.error("Failed to load trashed records.");
+    }
+  };
 
   useEffect(() => {
     fetchRecords();
   }, []);
 
-  // Restore record (sets status back to active)
   const handleRestore = async (rec) => {
     try {
       await axios.put(`http://localhost:5000/api/records/${rec.id}`, 
         { status: "active" }, 
         { withCredentials: true }
       );
-      
       toast.success("Record restored successfully.");
       setConfirmAction(null);
       fetchRecords();
@@ -52,13 +46,9 @@ const fetchRecords = async () => {
     }
   };
 
-  // Permanently delete record (Physical delete from DB)
   const handleDelete = async (rec) => {
     try {
-      // NOTE: Ensure your backend has a route for permanent deletion
-      // If your standard DELETE route just trashes it, you might need a different endpoint
       await axios.delete(`http://localhost:5000/api/records/${rec.id}/permanent`, { withCredentials: true });
-
       toast.success("Record permanently deleted.");
       setConfirmAction(null);
       fetchRecords();
@@ -68,7 +58,6 @@ const fetchRecords = async () => {
     }
   };
 
-  // Pagination helpers
   const filteredRecords = records.filter((rec) =>
     (rec.title || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -84,12 +73,17 @@ const fetchRecords = async () => {
     setCurrentPage(newPage);
   };
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
-        <h1 className="text-2xl font-bold text-gray-800">Trash Bin</h1>
+  if (loading) return <p className="p-6 text-center">Loading authentication...</p>;
 
+  return (
+    <div className="p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold">Trash Bin</h1>
+          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs border border-gray-200">
+            Total: {filteredRecords.length}
+          </span>
+        </div>
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <input
             type="text"
@@ -99,76 +93,75 @@ const fetchRecords = async () => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="border-2 border-gray-200 p-2 rounded-lg focus:border-blue-500 outline-none w-full sm:w-64"
+            className="border p-2 rounded flex-grow"
           />
         </div>
       </div>
 
-      {/* Records list */}
-      <div className="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white shadow rounded p-4 overflow-x-auto">
         {paginatedRecords.length === 0 ? (
-          <div className="p-10 text-center text-gray-400 italic">
-            No records in the trash.
-          </div>
+          <p className="text-gray-500 text-center py-4">No records found in the trash.</p>
         ) : (
           <>
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase tracking-wider">
-                <tr>
-                  <th className="p-4 text-left">Title</th>
-                  <th className="p-4 text-left">Category</th>
-                  <th className="p-4 text-left">Date Trashed</th>
-                  <th className="p-4 text-center">Actions</th>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-[#e8e8e8] text-black">
+                  <th className="p-3 text-left border-b border-gray-300">Accession No.</th>
+                  <th className="p-3 text-left border-b border-gray-300">Box Number</th>
+                  <th className="p-3 text-left border-b border-gray-300">Title</th>
+                  <th className="p-3 text-left border-b border-gray-300">Place of Publication</th>
+                  <th className="p-3 text-left border-b border-gray-300">Publisher</th>
+                  <th className="p-3 text-left border-b border-gray-300">Date Trashed</th>
+                  <th className="p-3 text-center border-b border-gray-300">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedRecords.map((rec) => (
-                  <tr key={rec.id} className="hover:bg-red-50/30 transition">
-                    <td className="p-4 font-semibold text-gray-700">{rec.title || "Untitled"}</td>
-                    <td className="p-4 text-gray-500 text-xs">{rec.community} / {rec.collection}</td>
-                    <td className="p-4 text-gray-500">
-                      {rec.updated_at ? new Date(rec.updated_at).toLocaleDateString() : "Unknown"}
+              <tbody>
+                {paginatedRecords.map((rec, idx) => (
+                  <tr key={rec.id} className={`hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                    <td className="p-3 border-b border-gray-200">{rec.accessionNo || "-"}</td>
+                    <td className="p-3 border-b border-gray-200">{rec.boxNumber || "-"}</td>
+                    <td className="p-3 border-b border-gray-200 font-medium">
+                      {rec.title ? rec.title : <span className="text-gray-400 italic">No Title</span>}
                     </td>
-                    <td className="p-4 text-center space-x-2">
-                      <button
-                        onClick={() => setConfirmAction({ type: "restore", record: rec })}
-                        className="text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-md text-xs font-bold border border-emerald-200 transition"
-                      >
-                        Restore
-                      </button>
-                      <button
-                        onClick={() => setConfirmAction({ type: "delete", record: rec })}
-                        className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-bold border border-red-200 transition"
-                      >
-                        DELETE PERMENENTLY
-                      </button>
+                    <td className="p-3 border-b border-gray-200">{rec.placeOfPublication || "-"}</td>
+                    <td className="p-3 border-b border-gray-200">{rec.publisher || "-"}</td>
+                    <td className="p-3 border-b border-gray-200">
+                        {rec.updated_at ? new Date(rec.updated_at).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="p-3 border-b border-gray-200 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                            <button 
+                                onClick={() => setConfirmAction({ type: "restore", record: rec })} 
+                                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs transition-colors font-medium"
+                            >
+                                Restore
+                            </button>
+                            <button 
+                                onClick={() => setConfirmAction({ type: "delete", record: rec })} 
+                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors font-medium uppercase"
+                            >
+                                Permanent Delete
+                            </button>
+                        </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            {/* Pagination */}
-            <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 border rounded bg-white disabled:opacity-50"
-                >
-                  Prev
-                </button>
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 border rounded bg-white disabled:opacity-50"
-                >
-                  Next
-                </button>
+            <div className="flex justify-between items-center mt-4 flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors text-black">Prev</button>
+                <span className="mx-2 text-black">Page {currentPage} of {totalPages}</span>
+                <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors text-black">Next</button>
+                <span className="ml-2 italic">Showing {paginatedRecords.length} of {filteredRecords.length} trashed items</span>
               </div>
-              <span className="text-gray-500 text-sm">
-                Page {currentPage} of {totalPages}
-              </span>
+              <div className="flex items-center gap-2">
+                <label htmlFor="pageSize" className="font-medium text-sm text-gray-700">Rows per page:</label>
+                <select id="pageSize" className="border p-1 rounded text-sm" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}>
+                  {[10, 50, 100].map((size) => (<option key={size} value={size}>{size}</option>))}
+                </select>
+              </div>
             </div>
           </>
         )}
@@ -176,26 +169,23 @@ const fetchRecords = async () => {
 
       {/* Confirmation Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm z-50 p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
-            <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl ${confirmAction.type === 'restore' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                {confirmAction.type === 'restore' ? '↺' : '🗑️'}
-            </div>
-            <h3 className="text-xl font-bold mb-2">
-              {confirmAction.type === "restore" ? "Restore Record?" : "Permanent Delete?"}
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
+          <div className="bg-white p-6 rounded shadow-xl w-full max-w-md border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+                {confirmAction.type === "restore" ? "Confirm Restore" : "Confirm Permanent Delete"}
             </h3>
-            <p className="text-gray-500 text-sm mb-8">
-                {confirmAction.type === "restore" 
-                  ? "This record will be visible again in the main library." 
-                  : "This action cannot be undone. All metadata and files will be lost."}
+            <p className="text-gray-600 mb-6">
+              {confirmAction.type === "restore" 
+                ? `Are you sure you want to restore "${confirmAction.record.title}" to the main records?`
+                : `Warning: You are about to permanently delete "${confirmAction.record.title}". This action cannot be undone.`}
             </p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmAction(null)} className="flex-1 py-2 text-sm font-bold text-gray-400">Cancel</button>
-              <button
-                onClick={() => confirmAction.type === "restore" ? handleRestore(confirmAction.record) : handleDelete(confirmAction.record)}
-                className={`flex-1 py-2 rounded-xl text-white text-sm font-bold ${confirmAction.type === "restore" ? "bg-emerald-600" : "bg-red-600"}`}
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setConfirmAction(null)} className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded text-gray-700 font-medium transition-colors">Cancel</button>
+              <button 
+                onClick={() => confirmAction.type === "restore" ? handleRestore(confirmAction.record) : handleDelete(confirmAction.record)} 
+                className={`${confirmAction.type === 'restore' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white px-4 py-2 rounded font-medium transition-colors shadow-sm`}
               >
-                Confirm
+                {confirmAction.type === "restore" ? "Restore" : "Delete Permanently"}
               </button>
             </div>
           </div>

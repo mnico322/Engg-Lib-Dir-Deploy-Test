@@ -35,8 +35,8 @@ export default function AdminDashboard() {
 function StatCard({ title, value, color }) {
   return (
     <div className="bg-white p-6 rounded-2xl border shadow-sm">
-      <p className="text-gray-500 text-xs font-bold uppercase mb-1">{title}</p>
-      <p className={`text-3xl font-black ${color}`}>{value}</p>
+      <p className="text-gray-500 text-s font-bold mb-1">{title}</p>
+      <p className={`text-3xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }

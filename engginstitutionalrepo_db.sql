@@ -2,8 +2,8 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost
--- Generation Time: Mar 10, 2026 at 04:41 AM
+-- Host: 127.0.0.1
+-- Generation Time: Mar 18, 2026 at 08:39 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -191,7 +191,27 @@ INSERT INTO `activity_logs` (`id`, `firebaseId`, `action`, `recordFirebaseId`, `
 (142, NULL, 'view', NULL, 5, 'Whatver', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-06 21:04:31'),
 (143, NULL, 'view', NULL, 4, '2', NULL, NULL, 'Allan', 'librarian', 'User viewed a record', '2026-03-07 20:50:42'),
 (144, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'unknown', 'guest', 'User undefineded a record', '2026-03-10 10:58:13'),
-(145, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'unknown', 'guest', 'User undefineded a record', '2026-03-10 11:28:19');
+(145, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'unknown', 'guest', 'User undefineded a record', '2026-03-10 11:28:19'),
+(146, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'unknown', 'guest', 'User undefineded a record', '2026-03-10 15:01:38'),
+(147, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'VIEW performed by guest', '2026-03-17 11:31:19'),
+(148, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'VIEW performed by guest', '2026-03-17 11:35:03'),
+(149, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'Viewed record: 123', '2026-03-17 11:35:03'),
+(150, NULL, 'VIEW', NULL, NULL, 'Hi', NULL, NULL, 'unknown', 'guest', 'VIEW performed by guest', '2026-03-17 11:35:07'),
+(151, NULL, 'VIEW', NULL, NULL, 'Hi', NULL, NULL, 'unknown', 'guest', 'Viewed record: Hi', '2026-03-17 11:35:07'),
+(152, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'VIEW performed by Allan', '2026-03-17 11:47:06'),
+(153, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'Viewed record: 123', '2026-03-17 11:47:06'),
+(154, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'VIEW performed by Allan', '2026-03-17 11:47:31'),
+(155, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'Viewed record: 123', '2026-03-17 11:47:31'),
+(156, NULL, 'VIEW', NULL, NULL, 'Whatver', NULL, NULL, 'unknown', 'guest', 'Viewed record: Whatver', '2026-03-17 11:57:37'),
+(157, NULL, 'VIEW', NULL, NULL, 'Hi', NULL, NULL, 'unknown', 'guest', 'Viewed record: Hi', '2026-03-17 13:01:05'),
+(158, NULL, 'NAVIGATE', NULL, NULL, 'Add Record Page', NULL, NULL, 'unknown', 'guest', 'User clicked Add Record', '2026-03-17 16:10:49'),
+(159, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'VIEW performed by Allan', '2026-03-17 16:13:05'),
+(160, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'unknown', 'guest', 'Viewed record: 123', '2026-03-17 16:13:05'),
+(161, NULL, 'VIEW', NULL, NULL, 'Whatver', NULL, NULL, 'unknown', 'guest', 'VIEW performed by Allan', '2026-03-17 16:13:08'),
+(162, NULL, 'VIEW', NULL, NULL, 'Whatver', NULL, NULL, 'unknown', 'guest', 'Viewed record: Whatver', '2026-03-17 16:13:08'),
+(163, NULL, 'NAVIGATE', NULL, NULL, 'Add Record Page', NULL, NULL, 'unknown', 'guest', 'User clicked Add Record', '2026-03-17 16:44:14'),
+(164, NULL, 'VIEW', NULL, NULL, '123', NULL, NULL, 'Allan', 'librarian', 'view record: 123', '2026-03-18 15:37:49'),
+(165, NULL, 'VIEW', NULL, NULL, 'Title 2', NULL, NULL, 'Allan', 'librarian', 'view record: Title 2', '2026-03-18 15:38:00');
 
 -- --------------------------------------------------------
 
@@ -267,7 +287,8 @@ INSERT INTO `records` (`id`, `community`, `collection`, `subCollection`, `subSub
 (3, 'College Archives', 'Publications', 'College of Engineering (COE)', '', 'active', 'uploads\\1772777660169-CS_20_Problem_Set-4.pdf', NULL, NULL, '1', '1', '1', NULL, '1', 'Newspaper', '1', '1111-11-11', '11', 'Public (Metadata & File)', '1', '1', '1', '1', '1', '1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 06:14:20'),
 (4, 'College Archives', 'Permanent Records', 'Minutes of the Meetings', 'College Executive Board (CEB)', 'active', 'uploads\\1772797356761-JF26 Shiftee List.pdf', '2', '2', '2', '2', '2', '2222-02-22', '2', 'College Executive Board (CEB)', '1', '2222-02-22', 'hi', 'Public (Metadata & File)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 11:42:36'),
 (5, 'College Archives', 'Permanent Records', 'Reports', '', 'active', 'uploads\\1772802262482-Lec4-Transistors-Mosfets.pdf', '123', 'QC', '4', 'Cheese', 'COE', '2026-03-06', 'Whatver', 'Annual Reports', 'Book', '2026-03-06', 'I am a book', 'Public (Metadata & File)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-06 13:04:22'),
-(6, 'College Archives', 'Permanent Records', 'Minutes of the Meetings', 'Others', 'active', 'uploads\\1773113347749-Q5.pdf', '4', '4', '4', 'Nico', '4', '1908-04-04', 'Hi', 'College Executive Board (CEB)', 'Book', '2026-03-10', 'hehe', 'Public (Metadata & File)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-10 03:29:07');
+(6, 'College Archives', 'Permanent Records', 'Minutes of the Meetings', 'Others', 'active', 'uploads\\1773113347749-Q5.pdf', '4', '4', '4', 'Nico', '4', '1908-04-04', 'Hi', 'College Executive Board (CEB)', 'Book', '2026-03-10', 'hehe', 'Public (Metadata & File)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-10 03:29:07'),
+(7, 'Faculty Publications', 'Book Chapters', '', '', 'active', NULL, NULL, NULL, NULL, '123', NULL, NULL, '123', NULL, NULL, NULL, NULL, 'Public (Metadata Only)', NULL, NULL, 'asdasda', NULL, NULL, NULL, NULL, 'Serials', NULL, NULL, NULL, NULL, NULL, 'asfdasd', 'Gio', 'Title', ' 69', 'Engglib', '2026-03-02', '2026-03-05', 'asdads', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-10 07:02:12');
 
 -- --------------------------------------------------------
 
@@ -331,13 +352,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166;
 
 --
 -- AUTO_INCREMENT for table `records`
 --
 ALTER TABLE `records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `users`
