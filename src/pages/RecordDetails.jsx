@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 export default function RecordDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { userData } = useAuth();
+  const { user } = useAuth(); 
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +19,7 @@ export default function RecordDetails() {
         });
         setRecord(res.data);
       } catch (err) {
+        console.error(err);
         toast.error("Failed to fetch record details");
         navigate("/records");
       } finally {
@@ -28,110 +29,127 @@ export default function RecordDetails() {
     fetchRecord();
   }, [id, navigate]);
 
-  if (loading) return <div className="p-10 text-center text-gray-500">Loading Record Details...</div>;
-  if (!record) return <div className="p-10 text-center text-red-500">Record not found.</div>;
+  if (loading) return <div className="p-10 text-center text-gray-500 font-medium">Loading Record Details...</div>;
+  if (!record) return <div className="p-10 text-center text-red-500 font-medium">Record not found.</div>;
 
-  // Metadata mapping to match the AddRecord grid style
+  // Mapping to match SQL underscore naming convention
   const detailFields = [
-    { label: "Accession No.", value: record.accessionNo },
-    { label: "Box Number", value: record.boxNumber },
-    { label: "Place of Publication", value: record.placeOfPublication },
+    { label: "Accession No.", value: record.accession_no },
+    { label: "Box Number", value: record.box_number },
+    { label: "Place of Publication", value: record.place_of_publication },
     { label: "Publisher", value: record.publisher },
-    { label: "Date of Publication", value: record.dateOfPublication },
-    { label: "Type", value: record.type },
-    { label: "Paper", value: record.paper },
+    { label: "Date of Publication", value: record.date_of_publication },
+    { label: "Content Type", value: record.content_type },
+    { label: "Paper/Journal", value: record.paper },
     { label: "Access Level", value: record.accessLevel },
+    { label: "Status", value: record.status?.toUpperCase() },
   ];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto animate-fadeIn">
       {/* Header Section */}
-      <div className="mb-8 flex justify-between items-end">
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <button 
             onClick={() => navigate("/records")}
-            className="text-orange-600 hover:text-orange-700 font-bold text-sm mb-2 flex items-center gap-1 transition-colors"
+            className="text-orange-600 hover:text-orange-700 font-bold text-sm mb-2 flex items-center gap-1 transition-colors group"
           >
-            ← BACK TO ARCHIVE
+            <span className="group-hover:-translate-x-1 transition-transform">←</span> BACK TO ARCHIVE
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">{record.title}</h1>
-          <p className="text-gray-500">Detailed view of the archived digital record.</p>
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight break-words">
+            {record.title}
+          </h1>
+          <p className="text-gray-500 mt-1">Archive reference and digital metadata.</p>
         </div>
 
-        {["admin", "librarian"].includes(userData?.role) && (
+        {["admin", "librarian"].includes(user?.role?.toLowerCase()) && (
           <button 
             onClick={() => navigate(`/records/edit/${id}`)}
-            className="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-gray-700 transition-all"
+            className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg hover:bg-gray-800 transition-all active:scale-95"
           >
             Edit Record
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-        {/* Metadata Grid - Matching the AddRecord look */}
-        <div className="p-8 border-b border-gray-50">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {detailFields.map((field, idx) => field.value && (
-              <div key={idx} className="flex flex-col">
-                <span className="text-xs font-bold uppercase text-gray-400 mb-1 tracking-wider">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        {/* Metadata Grid */}
+        <div className="p-8 bg-gray-50/50 border-b border-gray-100">
+          <h2 className="text-xs font-black uppercase text-gray-400 mb-6 tracking-[0.2em]">Basic Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+            {detailFields.map((field, idx) => (
+              <div key={idx} className="flex flex-col group">
+                <span className="text-[10px] font-bold uppercase text-gray-400 mb-1 tracking-wider group-hover:text-orange-500 transition-colors">
                   {field.label}
                 </span>
-                <span className="text-gray-800 font-medium border-b border-gray-50 pb-2">
-                  {field.value}
+                {/* 🔹 Removed 'truncate' to ensure full text visibility */}
+                <span className="text-gray-900 font-semibold text-lg break-words">
+                  {field.value || <span className="text-gray-300 font-normal italic">Not specified</span>}
                 </span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Long Text Sections */}
-        <div className="p-8 space-y-8 bg-white">
+        {/* Content Sections */}
+        <div className="p-8 space-y-10">
           <section>
-            <h2 className="text-sm font-bold uppercase text-orange-600 mb-3 tracking-wide">Description / Content</h2>
-            <div className="text-gray-700 leading-relaxed whitespace-pre-line bg-gray-50 p-4 rounded-lg border border-gray-100">
-              {record.descriptionContent || "No description provided."}
+            <h2 className="text-xs font-black uppercase text-orange-600 mb-4 tracking-[0.2em]">Description / Content</h2>
+            <div className="text-gray-700 leading-relaxed whitespace-pre-line bg-white p-5 rounded-xl border-2 border-gray-50 shadow-inner break-words">
+              {record.description_content || "No detailed description available."}
             </div>
           </section>
 
           <section>
-            <h2 className="text-sm font-bold uppercase text-orange-600 mb-3 tracking-wide">Abstract</h2>
-            <div className="text-gray-700 italic leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-100">
-              {record.abstract || "No abstract available."}
+            <h2 className="text-xs font-black uppercase text-orange-600 mb-4 tracking-[0.2em]">Abstract</h2>
+            <div className="text-gray-600 italic leading-relaxed bg-orange-50/30 p-5 rounded-xl border border-orange-100/50 break-words">
+              {record.abstract || "No abstract provided for this record."}
             </div>
           </section>
 
           <section>
-            <h2 className="text-sm font-bold uppercase text-orange-600 mb-3 tracking-wide">Keywords</h2>
+            <h2 className="text-xs font-black uppercase text-orange-600 mb-4 tracking-[0.2em]">Keywords</h2>
             <div className="flex flex-wrap gap-2">
-              {record.keywords?.split(',').map((tag, i) => (
-                <span key={i} className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">
-                  {tag.trim()}
-                </span>
-              )) || <span className="text-gray-400 text-sm">No keywords assigned.</span>}
+              {record.keywords ? (
+                record.keywords.split(/[\n,]+/).map((tag, i) => tag.trim() && (
+                  <span key={i} className="bg-white text-orange-600 border border-orange-200 px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-orange-600 hover:text-white transition-colors cursor-default">
+                    {tag.trim()}
+                  </span>
+                ))
+              ) : (
+                <span className="text-gray-400 text-sm italic">No keywords assigned.</span>
+              )}
             </div>
           </section>
 
-          {/* Action Bar / File Section */}
-          <div className="pt-6 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-gray-400 italic">
-              Record ID: <span className="font-mono">{id}</span>
-            </div>
-            
-            {record.fileUrl ? (
+          {/* Audit Metadata (System Info) */}
+          <div className="pt-8 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="text-[11px] text-gray-400 uppercase tracking-widest">
+                Encoded By: <span className="text-gray-600 font-bold">{record.encoded_by || 'Unknown'}</span>
+             </div>
+             <div className="text-[11px] text-gray-400 uppercase tracking-widest md:text-right">
+                System ID: <span className="font-mono text-gray-600">{id}</span>
+             </div>
+          </div>
+
+          {/* Download Action */}
+          <div className="pt-6 flex justify-center md:justify-end">
+            {record.file_path ? (
               <a 
-                href={`http://localhost:5000${record.fileUrl}`} 
+                href={`http://localhost:5000/${record.file_path}`} 
                 target="_blank" 
                 rel="noreferrer"
-                className="w-full md:w-auto bg-orange-600 text-white px-8 py-3 rounded-lg font-bold shadow-md hover:bg-orange-700 transition-all text-center flex items-center justify-center gap-2"
+                className="w-full md:w-auto bg-orange-600 text-white px-10 py-4 rounded-xl font-bold shadow-lg hover:bg-orange-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Download Document
+                Download Full Document
               </a>
             ) : (
-              <div className="text-gray-400 text-sm font-medium">No digital file attached</div>
+              <div className="px-8 py-4 bg-gray-100 text-gray-400 rounded-xl font-bold border border-dashed border-gray-300">
+                No Digital File Attached
+              </div>
             )}
           </div>
         </div>

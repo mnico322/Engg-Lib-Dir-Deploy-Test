@@ -94,12 +94,12 @@ function DashboardFeed({ title, items, navigate, emptyMessage }) {
                 {rec.title}
               </h3>
               <p className="text-xs text-gray-400 font-bold uppercase mt-1">
-                {rec.author || "No Author"}
+                {rec.publisher || "No Author"}
               </p>
             </div>
             <div className="ml-4 text-right flex flex-col items-end">
               <span className="text-xs font-bold text-gray-300">
-                {new Date(rec.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                {new Date(rec.date_encoded).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
               <span className="text-[10px] text-[#ff8400] opacity-0 group-hover:opacity-100 transition-opacity font-bold uppercase mt-1">
                 View Details →

@@ -44,14 +44,15 @@ router.post('/', upload.single('file'), async (req, res) => {
     // LOGGING
     const userDisplayName = req.body.author || "System"; // Or get from session
     const recordTitle = req.body.title || "Untitled";
-
+    console.log("attempting to log...")
     // Call your logger properly
     await logActivity({
-      user: req.body.author || "System",
+      user: req.body.userEmail || "System",
       action: "ADD",
       recordId: result.insertId,
       title: req.body.title || "Untitled",
-      description: `New record added to ${req.body.community}`
+      description: `New record added to ${req.body.community}`,
+      encoded_by: data.userEmail || "system"
     });
 
     res.status(201).json({ message: "Record added successfully", id: result.insertId });

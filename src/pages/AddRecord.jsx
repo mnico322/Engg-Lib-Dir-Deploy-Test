@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { fieldConfig } from "../config/fieldConfig"; // This is now your array
+import { fieldConfig } from "../config/fieldConfig"; 
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -7,20 +7,19 @@ import { useAuth } from "../context/AuthContext";
 
 export default function AddRecord() {
   const navigate = useNavigate();
-  const { userData, loading } = useAuth();
+  // 🔹 FIX 1: Changed userData to user to match your AuthContext
+  const { user, loading } = useAuth(); 
 
-  // Form State
   const [formData, setFormData] = useState({});
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const role = userData?.role || "guest";
+  const role = user?.role || "guest";
   const canEdit = ["admin", "librarian"].includes(role);
 
-  // Authorization Check
   useEffect(() => {
     if (!loading) {
-      if (!userData) {
+      if (!user) {
         toast.error("Please login to continue.");
         navigate("/login");
       } else if (!canEdit) {
@@ -28,9 +27,8 @@ export default function AddRecord() {
         navigate("/records");
       }
     }
-  }, [loading, userData, canEdit, navigate]);
+  }, [loading, user, canEdit, navigate]);
 
-  // --- Handlers ---
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -47,12 +45,13 @@ export default function AddRecord() {
 
     try {
       const payload = new FormData();
-      payload.append("userName", userData?.displayName || "System User");
-      payload.append("userRole", userData?.role || "Librarian");
+      // 🔹 Use 'user' instead of 'userData'
+      payload.append("userName", user?.displayName || "Nico");
+      payload.append("userRole", user?.role || "Librarian");
+      payload.append("userEmail", user?.email || "mercadonicolai322@gmail.com")
 
-      // Map all form fields to FormData
       Object.entries(formData).forEach(([key, value]) => {
-        payload.append(key, value);
+        if (value) payload.append(key, value);
       });
 
       if (file) payload.append("file", file);
@@ -73,7 +72,7 @@ export default function AddRecord() {
   };
 
   if (loading) return <div className="p-10 text-center">Loading Session...</div>;
-  if (!userData || !canEdit) return null;
+  if (!user || !canEdit) return null;
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -93,6 +92,7 @@ export default function AddRecord() {
               {field.type === "textarea" ? (
                 <textarea
                   name={field.name}
+                  value={formData[field.name] || ""} // 🔹 FIX 2: Controlled input
                   onChange={handleChange}
                   className="w-full p-2 border rounded-md h-24 focus:ring-2 focus:ring-orange-500 outline-none"
                   placeholder={`Enter ${field.label.toLowerCase()}...`}
@@ -101,25 +101,25 @@ export default function AddRecord() {
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700"
                 />
               ) : field.type === "select" ? (
                 <select
                   name={field.name}
+                  value={formData[field.name] || ""} // 🔹 FIX 2: Controlled input
                   onChange={handleChange}
                   className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-orange-500 outline-none"
                 >
                   <option value="">Select {field.label}</option>
                   {field.options?.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
+                    <option key={opt} value={opt}>{opt}</option>
                   ))}
                 </select>
               ) : (
                 <input
                   type={field.type}
                   name={field.name}
+                  value={formData[field.name] || ""} // 🔹 FIX 2: Controlled input
                   onChange={handleChange}
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none"
                 />
@@ -129,18 +129,10 @@ export default function AddRecord() {
         </div>
 
         <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
-          <button
-            type="button"
-            onClick={() => navigate("/records")}
-            className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          >
+          <button type="button" onClick={() => navigate("/records")} className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-orange-600 text-white px-8 py-2 rounded-lg font-bold shadow-md hover:bg-orange-700 disabled:opacity-50 transition-all"
-          >
+          <button type="submit" disabled={saving} className="bg-orange-600 text-white px-8 py-2 rounded-lg font-bold shadow-md hover:bg-orange-700 disabled:opacity-50">
             {saving ? "Saving to Archive..." : "Save Record"}
           </button>
         </div>

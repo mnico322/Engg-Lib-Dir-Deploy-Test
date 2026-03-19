@@ -15,6 +15,7 @@ export default function RecordsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchCategory, setSearchCategory] = useState("title");
 
   if (loading) return <p className="p-6 text-center">Loading authentication...</p>;
 
@@ -64,7 +65,7 @@ export default function RecordsPage() {
       const record = records.find((r) => r.id === id);
       await axios.delete(`http://localhost:5000/api/records/${id}`, {
         withCredentials: true,
-        data: { user: user?.displayName || "Nico", role: user?.role || "Librarian" }
+        data: { user: user?.displayName || "System", role: user?.role || "Librarian" }
       });
 
       toast.success(`Record "${record?.title || "Record"}" moved to trash.`);
@@ -100,10 +101,35 @@ export default function RecordsPage() {
   };
 
   // Filter based on Title or Keywords
-  const filteredRecords = records.filter((rec) =>
-    (rec.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (rec.keywords || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRecords = records.filter((rec) => {
+    const term = searchTerm.toLowerCase();
+    if (!term) return true;
+
+    switch (searchCategory) {
+      case "accession_no":
+        return (rec.accession_no || "").toLowerCase().includes(term);
+      case "keywords":
+        return (rec.keywords || "").toLowerCase().includes(term);
+      case "box_number":
+        return (rec.box_number || "").toLowerCase().includes(term);
+      case "place_of_publication":
+        return (rec.place_of_publication || "").toLowerCase().includes(term);
+      case "publisher":
+        return (rec.publisher || "").toLowerCase().includes(term);
+      case "date_of_publication":
+        return (rec.date_of_publication || "").toLowerCase().includes(term);
+      case "description_content":
+        return (rec.description_content || "").toLowerCase().includes(term);
+      case "content_type":
+        return (rec.content_type || "").toLowerCase().includes(term);
+      case "paper":
+        return (rec.paper || "").toLowerCase().includes(term);
+        
+      case "title":
+      default:
+        return (rec.title || "").toLowerCase().includes(term);
+    }
+  });
 
   const totalPages = Math.ceil(filteredRecords.length / pageSize) || 1;
   const paginatedRecords = filteredRecords.slice(
@@ -120,9 +146,25 @@ export default function RecordsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
         <h1 className="text-xl font-bold">Archives Index</h1>
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <select 
+            value={searchCategory}
+            onChange={(e) => { setSearchCategory(e.target.value); setCurrentPage(1); }}
+            className="border p-2 rounded bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="title">Title</option>
+            <option value="accession_no">Accession #</option>
+            <option value="keywords">Keywords</option>
+            <option value="box_no">Box #</option>
+            <option value="place_of_publication">Place of Publication</option>
+            <option value="publisher">Publisher</option>
+            <option value="date_of_publication">Date of Publication</option>
+            <option value="description_conent">Description/Content</option>
+            <option value="content_type">Type</option>
+            <option value="paper">Paper</option>
+          </select>
           <input
             type="text"
-            placeholder="Search by Title or Keywords..."
+            placeholder={`Search by ${searchCategory.replace('_', ' ')}...`}
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="border p-2 rounded flex-grow min-w-[300px]"
@@ -135,6 +177,18 @@ export default function RecordsPage() {
         </div>
       </div>
 
+      <div className="mb-4 flex items-center gap-4 text-sm">
+        <div className="bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full text-blue-700 font-medium">
+          Total Documents: <span className="font-bold">{records.length}</span>
+        </div>
+        
+        {searchTerm && (
+          <div className="bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-full text-gray-600">
+            Matching Results: <span className="font-bold">{filteredRecords.length}</span>
+          </div>
+        )}
+      </div>
+
       <div className="bg-white shadow rounded p-4 overflow-x-auto">
         {paginatedRecords.length === 0 ? (
           <p className="text-gray-500">No records found.</p>
@@ -144,10 +198,9 @@ export default function RecordsPage() {
         <thead>
           <tr className="bg-[#e8e8e8] text-black">
             <th className="p-3 text-left border-b border-gray-300">Box #</th>
+            <th className="p-3 text-left border-b border-gray-300">Accession #</th> {/* 🔹 Changed from Publisher */}
             <th className="p-3 text-left border-b border-gray-300">Title</th>
-            <th className="p-3 text-left border-b border-gray-300">Publisher</th>
             <th className="p-3 text-left border-b border-gray-300">Type</th>
-            {/* 🔹 Added Keywords Header */}
             <th className="p-3 text-left border-b border-gray-300">Keywords</th>
             <th className="p-3 text-center border-b border-gray-300">Actions</th>
           </tr>
@@ -156,13 +209,18 @@ export default function RecordsPage() {
           {paginatedRecords.map((rec, idx) => (
             <tr key={rec.id} className={`hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
               <td className="p-3 border-b border-gray-200">{rec.box_number || "-"}</td>
+              
+              {/* 🔹 Display Accession Number instead of Publisher */}
+              <td className="p-3 border-b border-gray-200 font-mono text-xs text-blue-700">
+                {rec.accession_no || "-"}
+              </td>
+
               <td className="p-3 border-b border-gray-200 font-medium max-w-xs truncate">
                 {rec.title || "-"}
               </td>
-              <td className="p-3 border-b border-gray-200">{rec.publisher || "-"}</td>
+              
               <td className="p-3 border-b border-gray-200">{rec.content_type || "-"}</td>
               
-              {/* 🔹 Added Keywords Data Cell */}
               <td className="p-3 border-b border-gray-200 max-w-xs">
                 <div className="flex flex-wrap gap-1">
                   {rec.keywords ? (
@@ -174,7 +232,6 @@ export default function RecordsPage() {
                   ) : (
                     <span className="text-gray-400 italic text-xs">None</span>
                   )}
-                  {/* Show a "..." if there are more than 2 keywords */}
                   {rec.keywords?.split('\n').length > 2 && <span className="text-gray-400 text-xs">...</span>}
                 </div>
               </td>
