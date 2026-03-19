@@ -19,7 +19,56 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-/* ================= 1. POST NEW RECORD ================= */
+/* ================= 1. GET TRASHED RECORDS (Must be above /:id) ================= */
+router.get("/trashed", async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT * FROM records WHERE status = 'trashed' ORDER BY updated_at DESC"
+        );
+        // Your frontend expects an array, so we send the rows directly
+        res.json(rows);
+    } catch (err) {
+        console.error("Fetch trashed error:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+/* ================= 2. PERMANENT DELETE (Must be above /:id) ================= */
+// router.delete("/:id/permanent", async (req, res) => {
+//     try {
+//         const { id } = req.params;
+        
+//         // Optional: Find the file path first to delete the actual file from disk
+//         const [record] = await db.query("SELECT file_path FROM records WHERE id = ?", [id]);
+//         if (record[0]?.file_path && fs.existsSync(record[0].file_path)) {
+//             fs.unlinkSync(record[0].file_path);
+//         }
+
+//         await db.query("DELETE FROM records WHERE id = ?", [id]);
+//         res.json({ message: "Record permanently deleted from database and storage." });
+//     } catch (err) {
+//         console.error("Permanent delete error:", err);
+//         res.status(500).json({ message: "Failed to delete" });
+//     }
+// });
+
+/* ================= 3. GET ALL ACTIVE RECORDS ================= */
+router.get("/", async (req, res) => {
+  try {
+    const userRole = req.cookies?.role || 'guest'; 
+    let sql = "SELECT * FROM records WHERE status = 'active'";
+    if (userRole === 'guest') sql += " AND accessLevel != 'Private (Staff Only)'";
+    sql += " ORDER BY box_number ASC, title ASC"; 
+
+    const [rows] = await db.query(sql);
+    res.json(rows);
+  } catch (err) {
+    console.error("Fetch records error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* ================= 4. POST NEW RECORD ================= */
 router.post("/", upload.single("file"), async (req, res) => {
     try {
         const { userEmail, userRole, ...rawBody } = req.body;
@@ -65,7 +114,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     }
 });
 
-/* ================= 2. GET SINGLE RECORD (NEW - Needed for View) ================= */
+/* ================= 5. GET SINGLE RECORD ================= */
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -78,63 +127,71 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-/* ================= 3. DELETE (NEW - Move to Trash) ================= */
+/* ================= 6. DELETE (Move to Trash) ================= */
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { userEmail, userRole } = req.body;
+        // In a DELETE request, data is often in the headers or query, 
+        // but if you're sending a body, ensure it's handled.
+        const { userEmail, userRole } = req.body || {}; 
 
-        const [record] = await db.query("SELECT title FROM records WHERE id = ?", [id]);
-        if (record.length === 0) return res.status(404).json({ message: "Not found" });
+        // 1. Check if record exists
+        const [rows] = await db.query("SELECT title FROM records WHERE id = ?", [id]);
+        if (rows.length === 0) return res.status(404).json({ message: "Record not found" });
 
-        await db.query("UPDATE records SET status = 'trashed' WHERE id = ?", [id]);
+        // 2. Explicitly set status to 'trashed'
+        const [result] = await db.query(
+            "UPDATE records SET status = 'trashed' WHERE id = ?", 
+            [id]
+        );
 
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ message: "Failed to update record status" });
+        }
+
+        // 3. Log the activity
         await logActivity({
             email: userEmail || "mercadonicolai322@gmail.com",
             action: "DELETE",
             recordId: id,
-            title: record[0].title,
+            title: rows[0].title,
             role: userRole || "Librarian",
-            description: `Moved record '${record[0].title}' to trash.`
+            description: `Moved record '${rows[0].title}' to trash.`
         });
 
-        res.json({ message: "Record moved to trash" });
+        res.json({ message: "Record moved to trash successfully" });
     } catch (err) {
         console.error("Delete Error:", err);
         res.status(500).json({ message: "Delete failed" });
     }
 });
 
-/* ================= 4. GET ALL RECORDS ================= */
-router.get("/", async (req, res) => {
-  try {
-    const userRole = req.cookies?.role || 'guest'; 
-    let sql = "SELECT * FROM records WHERE status = 'active'";
-    if (userRole === 'guest') sql += " AND accessLevel != 'Private (Staff Only)'";
-    sql += " ORDER BY box_number ASC, title ASC"; 
-
-    const [rows] = await db.query(sql);
-    res.json(rows);
-  } catch (err) {
-    console.error("Fetch records error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-/* ================= 5. UPDATE RECORD ================= */
+/* ================= 7. UPDATE RECORD ================= */
 router.put("/:id", upload.single("file"), async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const updateData = { ...req.body };
+
+        // If a file was uploaded, add it to the update object
         if (req.file) updateData.file_path = req.file.path;
 
-        const columns = Object.keys(updateData).filter(key => !['userEmail', 'userRole'].includes(key));
+        // Remove non-database fields
+        const forbidden = ['userEmail', 'userRole', 'id'];
+        const columns = Object.keys(updateData).filter(key => !forbidden.includes(key));
+        
+        if (columns.length === 0) return res.status(400).json({ message: "No data provided for update" });
+
         const values = columns.map(col => updateData[col]);
-
-        if (columns.length === 0) return res.status(400).json({ message: "No changes" });
-
         const setClause = columns.map((col) => `\`${col}\` = ?`).join(", ");
-        await db.query(`UPDATE records SET ${setClause} WHERE id = ?`, [...values, id]);
+
+        const [result] = await db.query(
+            `UPDATE records SET ${setClause} WHERE id = ?`, 
+            [...values, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Record not found or no changes made" });
+        }
 
         res.json({ message: "Update successful" });
     } catch (err) {
