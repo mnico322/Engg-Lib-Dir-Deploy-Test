@@ -44,8 +44,6 @@ router.post("/", async (req, res) => {
 /* ================= 2. FETCH ALL LOGS (GET) ================= */
 router.get("/", async (req, res) => {
   try {
-    // ✅ FIXED: Removed the '0' from FROM0
-    // ✅ ADDED: Explicit timestamp ordering
     const [rows] = await db.query("SELECT * FROM activity_logs ORDER BY id DESC"); 
     res.json(rows);
   } catch (err) {

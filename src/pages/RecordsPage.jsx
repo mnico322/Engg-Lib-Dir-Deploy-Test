@@ -169,7 +169,7 @@ export default function RecordsPage() {
             onChange={(e) => { setSearchField(e.target.value); setCurrentPage(1); }}
             className="border p-2 rounded text-sm bg-white"
           >
-            <option value="all">Global Search</option>
+            <option value="all">All</option>
             <option value="title">Title</option>
             <option value="accessionNo">Accession No.</option>
             <option value="boxNumber">Box Number</option>

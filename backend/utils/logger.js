@@ -17,8 +17,8 @@ export const logActivity = async ({ action, recordId, title, user, role, descrip
       description || ""      // Matches 'description' column
     ]);
     
-    console.log(`✔️ Logged to DB: ${action} by ${user}`);
+    console.log(`Logged to DB: ${action} by ${user}`);
   } catch (err) {
-    console.error("❌ Database Logger Error:", err.message);
+    console.error("Database Logger Error:", err.message);
   }
 };
