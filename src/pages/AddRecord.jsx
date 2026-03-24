@@ -7,7 +7,6 @@ import { useAuth } from "../context/AuthContext";
 
 export default function AddRecord() {
   const navigate = useNavigate();
-  // 🔹 FIX 1: Changed userData to user to match your AuthContext
   const { user, loading } = useAuth(); 
 
   const [formData, setFormData] = useState({});
@@ -45,10 +44,9 @@ export default function AddRecord() {
 
     try {
       const payload = new FormData();
-      // 🔹 Use 'user' instead of 'userData'
       payload.append("userName", user?.displayName || "Nico");
       payload.append("userRole", user?.role || "Librarian");
-      payload.append("userEmail", user?.email || "mercadonicolai322@gmail.com")
+      payload.append("userEmail", user?.email || "SYSTEM");
 
       Object.entries(formData).forEach(([key, value]) => {
         if (value) payload.append(key, value);
@@ -64,77 +62,140 @@ export default function AddRecord() {
       toast.success("Record saved successfully!");
       navigate("/records");
     } catch (err) {
-      console.error(err);
       toast.error(err.response?.data?.message || "Error saving record");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="p-10 text-center">Loading Session...</div>;
+  if (loading) return <div className="p-10 text-center text-gray-500 font-medium">Loading Session...</div>;
   if (!user || !canEdit) return null;
 
+  // Separate fields for logical grouping (to match the View format)
+  const titleField = fieldConfig.find(f => f.name === "title");
+  const gridFields = fieldConfig.filter(f => f.type !== "textarea" && f.type !== "file" && f.name !== "title");
+  const textAreaFields = fieldConfig.filter(f => f.type === "textarea");
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Add New Record</h1>
-        <p className="text-gray-500">Enter the details below to archive the new entry.</p>
+    <div className="p-6 max-w-5xl mx-auto animate-fadeIn">
+      {/* Header Section (Matching RecordDetails style) */}
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <button 
+            onClick={() => navigate("/records")}
+            className="text-orange-600 hover:text-orange-700 font-bold text-sm mb-2 flex items-center gap-1 transition-colors group"
+          >
+            <span className="group-hover:-translate-x-1 transition-transform">←</span> CANCEL & RETURN
+          </button>
+          <h1 className="text-3xl font-bold text-gray-800">New Archive Entry</h1>
+          <p className="text-gray-500 mt-1">Fill out the metadata to index this document.</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fieldConfig.map((field) => (
-            <div key={field.name} className={field.type === "textarea" ? "md:col-span-2" : ""}>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                {field.label}
-              </label>
-
-              {field.type === "textarea" ? (
-                <textarea
-                  name={field.name}
-                  value={formData[field.name] || ""} // 🔹 FIX 2: Controlled input
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-md h-24 focus:ring-2 focus:ring-orange-500 outline-none"
-                  placeholder={`Enter ${field.label.toLowerCase()}...`}
-                />
-              ) : field.type === "file" ? (
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700"
-                />
-              ) : field.type === "select" ? (
-                <select
-                  name={field.name}
-                  value={formData[field.name] || ""} // 🔹 FIX 2: Controlled input
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-orange-500 outline-none"
-                >
-                  <option value="">Select {field.label}</option>
-                  {field.options?.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type={field.type}
-                  name={field.name}
-                  value={formData[field.name] || ""} // 🔹 FIX 2: Controlled input
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-orange-500 outline-none"
-                />
-              )}
-            </div>
-          ))}
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        
+        {/* 🔹 TITLE BOX (Matching the Top Box in View) */}
+        <div className="p-8 pb-4 border-b border-gray-100">
+          <label className="text-[12px] text-gray-400 mb-2 tracking-wider block uppercase font-bold">
+            Document Title <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="title"
+            required
+            value={formData.title || ""}
+            onChange={handleChange}
+            className="w-full text-2xl font-semibold text-gray-900 border-b-2 border-transparent focus:border-orange-500 outline-none transition-all placeholder:text-gray-200"
+            placeholder="Enter the main document title..."
+          />
         </div>
 
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
-          <button type="button" onClick={() => navigate("/records")} className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
-            Cancel
-          </button>
-          <button type="submit" disabled={saving} className="bg-orange-600 text-white px-8 py-2 rounded-lg font-bold shadow-md hover:bg-orange-700 disabled:opacity-50">
-            {saving ? "Saving to Archive..." : "Save Record"}
-          </button>
+        {/* 🔹 METADATA GRID (Matching gray background grid in View) */}
+        <div className="p-8 bg-gray-50/50 border-b border-gray-100">
+          <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6">Archive Metadata</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+            {gridFields.map((field) => (
+              <div key={field.name} className="flex flex-col">
+                <label className="text-[12px] text-gray-400 mb-1 tracking-wider block uppercase font-semibold">
+                  {field.label}
+                </label>
+                {field.type === "select" ? (
+                  <select
+                    name={field.name}
+                    value={formData[field.name] || ""}
+                    onChange={handleChange}
+                    className="w-full bg-white border border-gray-200 rounded-lg p-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                  >
+                    <option value="">Select {field.label}</option>
+                    {field.options?.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={field.type}
+                    name={field.name}
+                    value={formData[field.name] || ""}
+                    onChange={handleChange}
+                    className="w-full bg-white border border-gray-200 rounded-lg p-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                    placeholder={`N/A`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 🔹 CONTENT SECTIONS (Description & Abstract style) */}
+        <div className="p-8 space-y-10">
+          {textAreaFields.map((field) => (
+            <section key={field.name}>
+              <label className="text-[12px] text-gray-400 mb-2 tracking-wider block uppercase font-bold">
+                {field.label}
+              </label>
+              <textarea
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+                className="w-full p-5 rounded-xl border-2 border-gray-50 shadow-inner focus:border-orange-200 outline-none min-h-[120px] text-gray-700 leading-relaxed transition-all"
+                placeholder={`Provide the detailed ${field.label.toLowerCase()} here...`}
+              />
+            </section>
+          ))}
+
+          {/* 🔹 FILE UPLOAD SECTION (Matching Download button area) */}
+          <section className="pt-6 border-t border-gray-100">
+            <label className="text-[12px] text-gray-400 mb-3 tracking-wider block uppercase font-bold">
+              Digital Attachment (PDF/Image)
+            </label>
+            <div className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all ${file ? 'border-emerald-200 bg-emerald-50/30' : 'border-gray-200 hover:border-orange-300 bg-gray-50/50'}`}>
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <div className="space-y-2">
+                <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${file ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-200 text-gray-500'}`}>
+                  {file ? '✓' : '+'}
+                </div>
+                <p className="font-bold text-gray-700">
+                  {file ? file.name : "Click to upload or drag and drop"}
+                </p>
+                <p className="text-xs text-gray-400 italic">Supports high-res documents and scans</p>
+              </div>
+            </div>
+          </section>
+
+          {/* 🔹 FORM ACTIONS */}
+          <div className="pt-6 flex flex-col md:flex-row justify-end gap-4">
+            <button
+              disabled={saving}
+              type="submit"
+              className="w-full md:w-auto bg-orange-600 text-white px-12 py-4 rounded-xl font-bold shadow-lg hover:bg-orange-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+            >
+              {saving ? "Processing Archive..." : "Save Record to Library"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

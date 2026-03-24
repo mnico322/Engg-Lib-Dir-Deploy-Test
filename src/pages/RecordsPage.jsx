@@ -242,7 +242,7 @@ export default function RecordsPage() {
                   <button onClick={() => handleDownload(rec)} className="bg-green-500 text-white px-3 py-1 rounded text-xs">Download</button>
                 )}
                 {canEdit && (
-                  <button onClick={() => setConfirmDelete(rec)} className="bg-red-500 text-white px-3 py-1 rounded text-xs">Delete</button>
+                  <button onClick={() => setConfirmDelete(rec)} className="bg-red-500 text-white px-3 py-1 rounded text-xs">Trash</button>
                 )}
               </td>
             </tr>

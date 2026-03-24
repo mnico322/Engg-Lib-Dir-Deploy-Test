@@ -17,6 +17,7 @@ import ProfileSettings from "./pages/ProfileSettings";
 import AddRecord from "./pages/AddRecord";
 import LibrarianDashboard from "./pages/LibrarianDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import EditRecord from "./pages/EditRecord";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -74,6 +75,7 @@ export default function App() {
               <Route path="/profile" element={<ProfileSettings />} />
               <Route path="/librariandashboard" element={<LibrarianDashboard />} />
               <Route path="/admindashboard" element={<AdminDashboard />} />
+              <Route path="/records/edit/:id" element={<EditRecord />} />
             </Route>
 
             {/* Records routes */}
