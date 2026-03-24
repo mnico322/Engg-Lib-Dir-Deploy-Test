@@ -34,6 +34,7 @@ export default function RecordDetails() {
 
   // Mapping to match SQL underscore naming convention
   const detailFields = [
+    { label: "Title", value: record.title},
     { label: "Accession No.", value: record.accession_no },
     { label: "Box Number", value: record.box_number },
     { label: "Place of Publication", value: record.place_of_publication },
@@ -56,9 +57,6 @@ export default function RecordDetails() {
           >
             <span className="group-hover:-translate-x-1 transition-transform">←</span> BACK TO ARCHIVE
           </button>
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight break-words">
-            {record.title}
-          </h1>
           <p className="text-gray-500 mt-1">Archive reference and digital metadata.</p>
         </div>
 
@@ -73,16 +71,27 @@ export default function RecordDetails() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        
+        {/* 🔹 TITLE PLACED AT THE TOP OF THE BOX */}
+        <div className="p-8 pb-0">
+          <span className="text-[12px] text-gray-400 mb-1 tracking-wider block">
+            Title
+          </span>
+          <h1 className="text-gray-900 text-3xl break-words">
+            {record.title || <span className="text-gray-300 font-normal italic">No Title Provided</span>}
+          </h1>
+        </div>
+
         {/* Metadata Grid */}
-        <div className="p-8 bg-gray-50/50 border-b border-gray-100">
-          <h2 className="text-xs font-black uppercase text-gray-400 mb-6 tracking-[0.2em]">Basic Information</h2>
+        <div className="p-8 bg-gray-50/50 border-b border-gray-100 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-            {detailFields.map((field, idx) => (
+            {detailFields
+              .filter(field => field.label !== "Title") // Prevents the title from appearing in the grid
+              .map((field, idx) => (
               <div key={idx} className="flex flex-col group">
-                <span className="text-[10px] font-bold uppercase text-gray-400 mb-1 tracking-wider group-hover:text-orange-500 transition-colors">
+                <span className="text-[12px] text-gray-400 mb-1 tracking-wider block">
                   {field.label}
                 </span>
-                {/* 🔹 Removed 'truncate' to ensure full text visibility */}
                 <span className="text-gray-900 font-semibold text-lg break-words">
                   {field.value || <span className="text-gray-300 font-normal italic">Not specified</span>}
                 </span>
@@ -94,25 +103,25 @@ export default function RecordDetails() {
         {/* Content Sections */}
         <div className="p-8 space-y-10">
           <section>
-            <h2 className="text-xs font-black uppercase text-orange-600 mb-4 tracking-[0.2em]">Description / Content</h2>
+            <h2 className="text-[12px] text-gray-400 mb-1 tracking-wider block">Description / Content</h2>
             <div className="text-gray-700 leading-relaxed whitespace-pre-line bg-white p-5 rounded-xl border-2 border-gray-50 shadow-inner break-words">
               {record.description_content || "No detailed description available."}
             </div>
           </section>
 
           <section>
-            <h2 className="text-xs font-black uppercase text-orange-600 mb-4 tracking-[0.2em]">Abstract</h2>
+            <h2 className="text-[12px] text-gray-400 mb-1 tracking-wider block">Abstract</h2>
             <div className="text-gray-600 italic leading-relaxed bg-orange-50/30 p-5 rounded-xl border border-orange-100/50 break-words">
               {record.abstract || "No abstract provided for this record."}
             </div>
           </section>
 
           <section>
-            <h2 className="text-xs font-black uppercase text-orange-600 mb-4 tracking-[0.2em]">Keywords</h2>
+            <h2 className="text-[12px] text-gray-400 mb-1 tracking-wider block">Keywords</h2>
             <div className="flex flex-wrap gap-2">
               {record.keywords ? (
                 record.keywords.split(/[\n,]+/).map((tag, i) => tag.trim() && (
-                  <span key={i} className="bg-white text-orange-600 border border-orange-200 px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-orange-600 hover:text-white transition-colors cursor-default">
+                  <span key={i} className="bg-white text-orange-600 border border-orange-200 px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm">
                     {tag.trim()}
                   </span>
                 ))
@@ -125,10 +134,10 @@ export default function RecordDetails() {
           {/* Audit Metadata (System Info) */}
           <div className="pt-8 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
              <div className="text-[11px] text-gray-400 uppercase tracking-widest">
-                Encoded By: <span className="text-gray-600 font-bold">{record.encoded_by || 'Unknown'}</span>
+               Encoded By: <span className="text-gray-600 font-bold">{record.encoded_by || 'Unknown'}</span>
              </div>
              <div className="text-[11px] text-gray-400 uppercase tracking-widest md:text-right">
-                System ID: <span className="font-mono text-gray-600">{id}</span>
+               System ID: <span className="font-mono text-gray-600">{id}</span>
              </div>
           </div>
 

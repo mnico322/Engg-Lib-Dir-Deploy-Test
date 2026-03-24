@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import userRoutes from "./routes/users.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 // Route Imports
 import authRoutes from "./routes/auth.routes.js";
@@ -39,6 +40,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/records", recordRoutes);
 app.use("/api/logs", logRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin", adminRoutes);
 
 // --- 404 Catch-all ---
 // If a request hits this, it means the URL doesn't exist in the routes above

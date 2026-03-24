@@ -21,11 +21,11 @@ export default function AdminDashboard() {
       <h1 className="text-2xl font-bold">System Overview</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard title="Total Records" value={stats.totalRecords} />
-        <StatCard title="Items in Trash" value={stats.totalUsers} />
+        <StatCard title="Items in Trash" value={stats.totalTrash} />
       </div>
       <h1 className="text-2xl font-bold">User Count</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="Total Users" value={stats.totalTrash} />
+        <StatCard title="Total Users" value={stats.totalUsers} />
       </div>
       {/* You can add server status or recent logs summary here */}
     </div>
