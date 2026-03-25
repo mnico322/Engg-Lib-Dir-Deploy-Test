@@ -32,19 +32,35 @@ router.get("/trashed", async (req, res) => {
 });
 
 /* ================= 2. PERMANENT DELETE ================= */
-// UNCOMMENTED AND MOVED ABOVE /:id
 router.delete("/:id/permanent", async (req, res) => {
     try {
         const { id } = req.params;
+        // FIX: Extract userEmail and userRole from the body
+        const { userEmail, userRole } = req.body; 
         
-        const [record] = await db.query("SELECT file_path FROM records WHERE id = ?", [id]);
+        // 1. Fetch info before the record is deleted
+        const [record] = await db.query("SELECT accession_no, title, file_path FROM records WHERE id = ?", [id]);
         
-        // Delete physical file
+        if (record.length === 0) return res.status(404).json({ message: "Record not found" });
+
+        // 2. Delete physical file
         if (record[0]?.file_path && fs.existsSync(record[0].file_path)) {
             fs.unlinkSync(record[0].file_path);
         }
 
+        // 3. Delete from database
         await db.query("DELETE FROM records WHERE id = ?", [id]);
+
+        // 4. Log the activity (Now userEmail is defined)
+        await logActivity({
+            action: "DELETE",
+            recordId: id,
+            title: record[0].title,
+            email: userEmail || "SYSTEM", 
+            role: userRole || "admin",
+            description: `Permanently deleted Record with Accession No. ${record[0].accession_no}`
+        });
+
         res.json({ message: "Record permanently deleted." });
     } catch (err) {
         console.error("Permanent delete error:", err);
@@ -90,12 +106,23 @@ router.post("/", upload.single("file"), async (req, res) => {
             encoded_by: userEmail || "SYSTEM",
         };
 
+        
+
         const columns = Object.keys(recordData);
         const values = Object.values(recordData);
         const placeholders = columns.map(() => "?").join(", ");
 
         const sql = `INSERT INTO records (${columns.map(c => `\`${c}\``).join(", ")}) VALUES (${placeholders})`;
         const [result] = await db.query(sql, values);
+
+        await logActivity({
+            action: "ADD",
+            recordId: result.insertId,
+            title: recordData.title,
+            email: userEmail,
+            role: userRole,
+            description: `Added new record '${recordData.title}'`
+        });
 
         res.status(201).json({ id: result.insertId, message: "Record saved" });
     } catch (err) {
@@ -120,24 +147,53 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", upload.single("file"), async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = { ...req.body };
+        const { userEmail, userRole, ...rawBody } = req.body;
+
+        // 1. Map frontend camelCase to database snake_case
+        const updateData = {
+            ...rawBody,
+            // If the frontend sends 'accessionNo', rename it to 'accession_no'
+            accession_no: rawBody.accessionNo || rawBody.accession_no,
+        };
+
+        // 2. Remove the camelCase version so it doesn't break the SQL query
+        delete updateData.accessionNo;
 
         if (req.file) updateData.file_path = req.file.path;
 
-        // Clean the data so we don't try to insert metadata into the SQL query
-        const forbidden = ['userEmail', 'userRole', 'id', 'userName'];
-        const columns = Object.keys(updateData).filter(key => !forbidden.includes(key));
-        
-        if (columns.length === 0) return res.status(400).json({ message: "No valid fields provided" });
+        // 3. FETCH OLD DATA FOR LOGGING
+        const [oldRecords] = await db.query("SELECT accession_no, title FROM records WHERE id = ?", [id]);
+        if (oldRecords.length === 0) return res.status(404).json({ message: "Record not found" });
 
+        const oldAccession = oldRecords[0].accession_no;
+        const currentTitle = oldRecords[0].title;
+
+        // 4. Clean data for SQL
+        const forbidden = ['userEmail', 'userRole', 'id', 'userName', 'date_encoded', 'updated_at'];
+        const columns = Object.keys(updateData).filter(key => !forbidden.includes(key) && updateData[key] !== undefined);
+        
         const values = columns.map(col => updateData[col]);
         const setClause = columns.map((col) => `\`${col}\` = ?`).join(", ");
 
-        // Add the ID to the end of the values array for the WHERE clause
-        const [result] = await db.query(
-            `UPDATE records SET ${setClause} WHERE id = ?`, 
-            [...values, id]
-        );
+        // 5. EXECUTE UPDATE
+        await db.query(`UPDATE records SET ${setClause} WHERE id = ?`, [...values, id]);
+
+        // 6. LOGIC FOR DESCRIPTION
+        const newAccession = updateData.accession_no || oldAccession;
+        let logDescription = `Updated metadata for Record with Accession No. ${newAccession}`;
+
+        if (updateData.accession_no && updateData.accession_no !== oldAccession) {
+            logDescription += ` (Changed from '${oldAccession}' to '${newAccession}')`;
+        }
+
+        await logActivity({
+            action: "MODIFY",
+            recordId: id,
+            title: updateData.title || currentTitle, 
+            email: userEmail,
+            role: userRole,
+            description: logDescription
+        });
 
         res.json({ message: "Update successful" });
     } catch (err) {
@@ -145,16 +201,38 @@ router.put("/:id", upload.single("file"), async (req, res) => {
         res.status(500).json({ message: "Update failed" });
     }
 });
-
 /* ================= 7. DELETE (Move to Trash) ================= */
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const [result] = await db.query("UPDATE records SET status = 'trashed' WHERE id = ?", [id]);
+        const { userEmail, userRole, ...rawBody } = req.body;
+
+        // 1. Fetch accession_no and title before updating status
+        const [record] = await db.query("SELECT accession_no, title FROM records WHERE id = ?", [id]);
+        
+        if (record.length === 0) return res.status(404).json({ message: "Record not found" });
+
+        const accNo = record[0].accession_no;
+        const title = record[0].title;
+
+        // 2. Move to trash
+        await db.query("UPDATE records SET status = 'trashed' WHERE id = ?", [id]);
+
+        // 3. Log the activity
+        await logActivity({
+            action: "TRASH",
+            recordId: id,
+            title: title,
+            email: userEmail,
+            role: userRole,
+            description: `Moved Record with Accession No. ${accNo} to trash`
+        });
+
         res.json({ message: "Moved to trash" });
     } catch (err) {
+        console.error("Trash error:", err);
         res.status(500).json({ message: "Delete failed" });
-    }
+    } 
 });
 
 export default router;

@@ -60,19 +60,25 @@ export default function RecordsPage() {
     navigate("/records/add");
   };
 
-  const handleDelete = async (id) => {
+  const moveToTrash = async (id) => {
     try {
-      const record = records.find((r) => r.id === id);
       await axios.delete(`http://localhost:5000/api/records/${id}`, {
-        withCredentials: true,
-        data: { user: user?.displayName || "System", role: user?.role || "Librarian" }
+        data: { 
+          userEmail: user?.email, 
+          userRole: user?.role 
+        },
+        withCredentials: true // Recommended since your GET/POST use it
       });
 
-      toast.success(`Record "${record?.title || "Record"}" moved to trash.`);
-      setConfirmDelete(null);
-      fetchRecords(); 
+      toast.success("Moved to trash!");
+      
+      // --- ADD THIS LINE TO HIDE THE MODAL ---
+      setConfirmDelete(null); 
+      
+      fetchRecords(); // Refresh the list
     } catch (err) {
-      toast.error("Failed to delete record.");
+      console.error("Trash error:", err);
+      toast.error("Failed to move to trash.");
     }
   };
 
@@ -273,7 +279,7 @@ export default function RecordsPage() {
             <p className="text-gray-600 mb-6">Are you sure you want to trash <strong>{confirmDelete.title}</strong>?</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setConfirmDelete(null)} className="bg-gray-100 px-4 py-2 rounded">Cancel</button>
-              <button onClick={() => handleDelete(confirmDelete.id)} className="bg-red-600 text-white px-4 py-2 rounded">Move to Trash</button>
+              <button onClick={() => moveToTrash(confirmDelete.id)} className="bg-red-600 text-white px-4 py-2 rounded">Move to Trash</button>
             </div>
           </div>
         </div>

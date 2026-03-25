@@ -45,7 +45,11 @@ export default function TrashedRecords() {
     const recordId = rec.id || rec._id;
     try {
       await axios.put(`http://localhost:5000/api/records/${recordId}`, 
-        { status: "active" }, 
+        { 
+          status: "active",
+          userEmail: user?.email, // Added user info
+          userRole: user?.role 
+        }, 
         { withCredentials: true }
       );
       toast.success("Record restored successfully.");
@@ -59,7 +63,13 @@ export default function TrashedRecords() {
   const handleDelete = async (rec) => {
     const recordId = rec.id || rec._id;
     try {
-      await axios.delete(`http://localhost:5000/api/records/${recordId}/permanent`, { withCredentials: true });
+      await axios.delete(`http://localhost:5000/api/records/${recordId}/permanent`, {
+        data: { 
+          userEmail: user?.email, // Added user info here
+          userRole: user?.role 
+        },
+        withCredentials: true 
+      });
       toast.success("Record permanently deleted.");
       setConfirmAction(null);
       fetchRecords();
