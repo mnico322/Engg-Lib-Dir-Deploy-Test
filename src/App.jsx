@@ -57,7 +57,7 @@ export default function App() {
           <Routes>
             {/* ✅ Public routes with "Logged-in" check */}
             <Route path="/" element={<Home />} />
-            
+            <Route path="/records/:id" element={<RecordDetails />} />
             <Route 
               path="/login" 
               element={!userData ? <Login /> : <Navigate to={getRedirectPath(userData.role)} replace />} 
@@ -81,7 +81,7 @@ export default function App() {
             {/* Records routes */}
             <Route element={<PrivateRoute allowedRoles={["librarian", "guest", "admin"]} />}>
               <Route path="/records" element={<RecordsPage />} />
-              <Route path="/records/:id" element={<RecordDetails />} />
+              
               <Route path="/records/add" element={<AddRecord />} />
             </Route>
 
