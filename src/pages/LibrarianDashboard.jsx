@@ -25,13 +25,13 @@ export default function LibrarianDashboard() {
 
   // Logic for the 5 Most Recent Uploads (Specific to logged-in user)
   const myRecent = records
-    .filter(r => String(r.user_id) === String(user?.id))
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .filter(r => r.encoded_by === user?.email)
+    .sort((a, b) => new Date(b.date_encoded) - new Date(a.date_encoded))
     .slice(0, 5);
 
   // Logic for the 5 Latest Archive Additions (Global)
   const globalRecent = [...records]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .sort((a, b) => new Date(b.date_encoded) - new Date(a.date_encoded))
     .slice(0, 5);
 
   if (authLoading || loading) return <div className="p-10 text-center text-gray-500">Loading Dashboard...</div>;

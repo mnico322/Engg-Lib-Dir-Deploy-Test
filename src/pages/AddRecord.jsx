@@ -39,7 +39,11 @@ export default function AddRecord() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // 1. Check for required fields before processing
     if (!formData.title) return toast.error("Title is required");
+    if (!formData.accessionNo) return toast.error("Accession Number is required");
+    
     setSaving(true);
 
     try {
@@ -117,13 +121,15 @@ export default function AddRecord() {
             {gridFields.map((field) => (
               <div key={field.name} className="flex flex-col">
                 <label className="text-[12px] text-gray-400 mb-1 tracking-wider block uppercase font-semibold">
-                  {field.label}
+                  {/* 2. Add red asterisk conditionally if it's the accession number */}
+                  {field.label} {field.name === "accessionNo" && <span className="text-red-500">*</span>}
                 </label>
                 {field.type === "select" ? (
                   <select
                     name={field.name}
                     value={formData[field.name] || ""}
                     onChange={handleChange}
+                    required={field.name === "accessionNo"}
                     className="w-full bg-white border border-gray-200 rounded-lg p-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                   >
                     <option value="">Select {field.label}</option>
@@ -137,6 +143,8 @@ export default function AddRecord() {
                     name={field.name}
                     value={formData[field.name] || ""}
                     onChange={handleChange}
+                    // 3. Force HTML5 required validation
+                    required={field.name === "accessionNo"} 
                     className="w-full bg-white border border-gray-200 rounded-lg p-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                     placeholder={`N/A`}
                   />

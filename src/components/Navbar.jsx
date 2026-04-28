@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
 
 export default function Navbar() {
-  const { user, logout } = useAuth(); // ✅ reactive auth state
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showTooltip, setShowTooltip] = useState(false);
@@ -12,14 +12,13 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await logout(); // context handles cookie/session removal
-      navigate("/");  // redirect to home
+      await logout();
+      navigate("/");
     } catch (err) {
       console.error("Logout failed:", err);
     }
   };
 
-  // Function to highlight active links
   const linkClass = (path) => `
     px-2 py-1 rounded transition-colors duration-200
     ${
@@ -54,30 +53,33 @@ export default function Navbar() {
             menuOpen ? "block" : "hidden"
           } sm:flex space-x-4 items-center absolute sm:static top-[64px] left-0 w-full sm:w-auto bg-white sm:bg-transparent sm:p-0 p-4`}
         >
-
+          {/* Dashboards */}
           {(user?.role === "librarian" || user?.role === "guest") && (
             <Link to="/librariandashboard" className={linkClass("/librariandashboard")}>
               Dashboard
             </Link>
           )}
-          {(user?.role === "admin") && (
+          {user?.role === "admin" && (
             <Link to="/admindashboard" className={linkClass("/admindashboard")}>
               Admin Dashboard
             </Link>
           )}
 
-          {(user?.role === "librarian" || user?.role === "guest") && (
+          {/* ✅ Records: Now visible to Admin too */}
+          {(user?.role === "librarian" || user?.role === "guest" || user?.role === "admin") && (
             <Link to="/records" className={linkClass("/records")}>
               Records
             </Link>
           )}
 
-          {user?.role === "librarian" && (
+          {/* ✅ Trash: Now visible to Admin too */}
+          {(user?.role === "librarian" || user?.role === "admin") && (
             <Link to="/trash" className={linkClass("/trash")}>
               Trash
             </Link>
           )}
 
+          {/* Admin Exclusive Controls */}
           {user?.role === "admin" && (
             <>
               <Link to="/admincontrols" className={linkClass("/admincontrols")}>
@@ -94,7 +96,6 @@ export default function Navbar() {
         <div className="hidden sm:flex space-x-4 items-center relative">
           {user ? (
             <>
-              {/* Username tooltip */}
               <div
                 className="relative"
                 onMouseEnter={() => setShowTooltip(true)}

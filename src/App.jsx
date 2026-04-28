@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useAuth } from "./context/AuthContext"; // 🔥 Import useAuth
+import { useAuth } from "./context/AuthContext"; 
 
 // Pages
 import Home from "./pages/Home";
@@ -24,10 +24,8 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
 
-
-
 export default function App() {
-  const { userData, loading } = useAuth(); // 🔥 Destructure userData to check auth status
+  const { userData, loading } = useAuth();
 
   if (loading) {
     return (
@@ -40,10 +38,10 @@ export default function App() {
     );
   }
 
-  // Helper to determine where to send a logged-in user
+  // ✅ Fixed: Redirects to a valid route instead of a non-existent "/admin"
   const getRedirectPath = (role) => {
-    if (role === "admin") return "/admin";
-    if (role === "librarian") return "/records";
+    if (role === "admin") return "/admindashboard"; 
+    if (role === "librarian") return "/records"; // You could also point this to "/librariandashboard"
     return "/dashboard";
   };
 
@@ -55,9 +53,10 @@ export default function App() {
 
         <main className="flex-grow">
           <Routes>
-            {/* ✅ Public routes with "Logged-in" check */}
+            {/* ✅ Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/records/:id" element={<RecordDetails />} />
+            
             <Route 
               path="/login" 
               element={!userData ? <Login /> : <Navigate to={getRedirectPath(userData.role)} replace />} 
@@ -70,33 +69,30 @@ export default function App() {
             
             <Route path="/logout" element={<Logout />} />
 
-            {/* Profile Settings: any logged-in user */}
+            {/* ✅ Shared Routes: Admin, Librarian, Guest */}
             <Route element={<PrivateRoute allowedRoles={["admin", "librarian", "guest"]} />}>
               <Route path="/profile" element={<ProfileSettings />} />
               <Route path="/librariandashboard" element={<LibrarianDashboard />} />
               <Route path="/admindashboard" element={<AdminDashboard />} />
+              
+              {/* Records Management */}
+              <Route path="/records" element={<RecordsPage />} />
+              <Route path="/records/add" element={<AddRecord />} />
               <Route path="/records/edit/:id" element={<EditRecord />} />
             </Route>
 
-            {/* Records routes */}
-            <Route element={<PrivateRoute allowedRoles={["librarian", "guest", "admin"]} />}>
-              <Route path="/records" element={<RecordsPage />} />
-              
-              <Route path="/records/add" element={<AddRecord />} />
-            </Route>
-
-            {/* Trash (librarian only) */}
-            <Route element={<PrivateRoute allowedRoles={["librarian", "admin"]} />}>
+            {/* ✅ Elevated Routes: Admin and Librarian ONLY */}
+            <Route element={<PrivateRoute allowedRoles={["admin", "librarian"]} />}>
               <Route path="/trash" element={<TrashedRecords />} />
             </Route>
 
-            {/* Admin routes */}
+            {/* ✅ Exclusive Routes: Admin ONLY */}
             <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
               <Route path="/admincontrols" element={<AccountAdministration />} />
               <Route path="/logs" element={<ActivityLogs />} />
             </Route>
 
-            {/* Catch-all redirect */}
+            {/* ✅ Catch-all redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

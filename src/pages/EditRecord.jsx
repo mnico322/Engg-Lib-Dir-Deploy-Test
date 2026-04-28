@@ -8,7 +8,7 @@ import { useAuth } from "../context/AuthContext";
 export default function EditRecord() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { userData, loading: authLoading } = useAuth(); // Using userData to match your App.jsx
+  const { userData, loading: authLoading } = useAuth(); 
 
   const [formData, setFormData] = useState({});
   const [file, setFile] = useState(null);
@@ -24,7 +24,12 @@ export default function EditRecord() {
     const fetchExistingData = async () => {
       try {
         const res = await axios.get(`http://localhost:5000/api/records/${id}`, { withCredentials: true });
-        setFormData(res.data);
+        
+        // Ensure accession_number maps to accessionNo so the form pre-fills correctly
+        const data = res.data;
+        if (data.accession_number) data.accessionNo = data.accession_number;
+        
+        setFormData(data);
       } catch (err) {
         console.error(err);
         toast.error("Could not find record to edit.");
@@ -54,6 +59,11 @@ export default function EditRecord() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields before sending to backend
+    if (!formData.title) return toast.error("Title is required");
+    if (!formData.accessionNo) return toast.error("Accession Number is required");
+
     setSaving(true);
 
     try {
@@ -63,7 +73,6 @@ export default function EditRecord() {
 
       // Append all fields from formData
       Object.entries(formData).forEach(([key, value]) => {
-        // Don't append null values or the ID (ID is in the URL)
         if (value !== null && key !== 'id') {
             payload.append(key, value);
         }
@@ -77,7 +86,7 @@ export default function EditRecord() {
       });
 
       toast.success("Record updated successfully!");
-      navigate(`/records/${id}`); // Redirect back to details
+      navigate(`/records/${id}`); 
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "Failed to update record.");
@@ -108,7 +117,9 @@ export default function EditRecord() {
         
         {/* Title Section */}
         <div className="p-8 pb-4 border-b border-gray-100">
-          <label className="text-[12px] text-gray-400 mb-2 tracking-wider block uppercase font-bold">Document Title</label>
+          <label className="text-[12px] text-gray-400 mb-2 tracking-wider block uppercase font-bold">
+            Document Title <span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="title"
@@ -125,12 +136,15 @@ export default function EditRecord() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
             {gridFields.map((field) => (
               <div key={field.name} className="flex flex-col">
-                <label className="text-[12px] text-gray-400 mb-1 tracking-wider block uppercase font-semibold">{field.label}</label>
+                <label className="text-[12px] text-gray-400 mb-1 tracking-wider block uppercase font-semibold">
+                  {field.label} {field.name === "accessionNo" && <span className="text-red-500">*</span>}
+                </label>
                 {field.type === "select" ? (
                   <select
                     name={field.name}
                     value={formData[field.name] || ""}
                     onChange={handleChange}
+                    required={field.name === "accessionNo"}
                     className="w-full bg-white border border-gray-200 rounded-lg p-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 outline-none"
                   >
                     <option value="">Select {field.label}</option>
@@ -144,6 +158,7 @@ export default function EditRecord() {
                     name={field.name}
                     value={formData[field.name] || ""}
                     onChange={handleChange}
+                    required={field.name === "accessionNo"}
                     className="w-full bg-white border border-gray-200 rounded-lg p-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 outline-none"
                   />
                 )}

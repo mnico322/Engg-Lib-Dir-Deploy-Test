@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // Added for View functionality
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
@@ -9,12 +9,21 @@ export default function TrashedRecords() {
   const [loading, setLoading] = useState(true);
   const [confirmAction, setConfirmAction] = useState(null);
   const { user } = useAuth();
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
 
+  // Pagination & Filter state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCategory, setSearchCategory] = useState("title");
+
+  // State for the jump-to-page input
+  const [jumpPage, setJumpPage] = useState("1");
+
+  // Sync jumpPage input when currentPage changes via Prev/Next
+  useEffect(() => {
+    setJumpPage(currentPage.toString());
+  }, [currentPage]);
 
   const fetchRecords = useCallback(async () => {
     setLoading(true);
@@ -36,7 +45,6 @@ export default function TrashedRecords() {
     fetchRecords();
   }, [fetchRecords]);
 
-  // View Handler
   const handleView = (rec) => {
     navigate(`/records/${rec.id || rec._id}`, { state: { record: rec } });
   };
@@ -47,7 +55,7 @@ export default function TrashedRecords() {
       await axios.put(`http://localhost:5000/api/records/${recordId}`, 
         { 
           status: "active",
-          userEmail: user?.email, // Added user info
+          userEmail: user?.email, 
           userRole: user?.role 
         }, 
         { withCredentials: true }
@@ -65,7 +73,7 @@ export default function TrashedRecords() {
     try {
       await axios.delete(`http://localhost:5000/api/records/${recordId}/permanent`, {
         data: { 
-          userEmail: user?.email, // Added user info here
+          userEmail: user?.email, 
           userRole: user?.role 
         },
         withCredentials: true 
@@ -100,8 +108,32 @@ export default function TrashedRecords() {
     currentPage * pageSize
   );
 
+  const handleJumpPage = (e) => {
+    if (e.key === "Enter") {
+      const val = parseInt(jumpPage);
+      if (!isNaN(val) && val >= 1 && val <= totalPages) {
+        setCurrentPage(val);
+      } else {
+        toast.error(`Please enter a page between 1 and ${totalPages}`);
+        setJumpPage(currentPage.toString());
+      }
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      {/* CSS to remove number arrows */}
+      <style>{`
+        .no-spinner::-webkit-inner-spin-button,
+        .no-spinner::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        .no-spinner {
+          -moz-appearance: textfield;
+        }
+      `}</style>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
         <h1 className="text-2xl font-bold text-gray-800">Trash Bin</h1>
@@ -152,32 +184,26 @@ export default function TrashedRecords() {
                     <td className="p-4 font-semibold text-gray-700 whitespace-normal break-words align-top">
                       {rec.title || rec.name || "Untitled"}
                     </td>
-                    
                     <td className="p-4 text-gray-500 text-xs font-mono align-top">
                       {rec.accession_no || "-"}
                     </td>
-                    
                     <td className="p-4 text-gray-500 whitespace-nowrap align-top">
                       {rec.updated_at ? new Date(rec.updated_at).toLocaleDateString() : "Unknown"}
                     </td>
-                    
                     <td className="p-4 text-center align-top">
                       <div className="flex justify-center gap-1.5">
-                        {/* VIEW BUTTON */}
                         <button
                           onClick={() => handleView(rec)}
                           className="text-blue-600 hover:bg-blue-50 px-2.5 py-1.5 rounded-md text-xs font-bold border border-blue-200 transition"
                         >
                           View
                         </button>
-                        
                         <button
                           onClick={() => setConfirmAction({ type: "restore", record: rec })}
                           className="text-emerald-600 hover:bg-emerald-50 px-2.5 py-1.5 rounded-md text-xs font-bold border border-emerald-200 transition"
                         >
                           Restore
                         </button>
-                        
                         <button
                           onClick={() => setConfirmAction({ type: "delete", record: rec })}
                           className="text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-md text-xs font-bold border border-red-200 transition"
@@ -191,20 +217,52 @@ export default function TrashedRecords() {
               </tbody>
             </table>
 
+            {/* Pagination Controls with Jump Input */}
             <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 border rounded bg-white disabled:opacity-50"
-                >Prev</button>
+                  className="px-3 py-1.5 border rounded-lg bg-white disabled:opacity-50 hover:bg-gray-100 transition text-sm font-medium"
+                >
+                  Prev
+                </button>
+
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                  <span>Page</span>
+                  <input
+                    type="number"
+                    value={jumpPage}
+                    onChange={(e) => setJumpPage(e.target.value)}
+                    onKeyDown={handleJumpPage}
+                    className="no-spinner w-12 text-center border-2 border-gray-200 rounded-md p-1 focus:border-blue-500 outline-none transition"
+                    min="1"
+                    max={totalPages}
+                  />
+                  <span>of {totalPages}</span>
+                </div>
+
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 border rounded bg-white disabled:opacity-50"
-                >Next</button>
+                  className="px-3 py-1.5 border rounded-lg bg-white disabled:opacity-50 hover:bg-gray-100 transition text-sm font-medium"
+                >
+                  Next
+                </button>
               </div>
-              <span className="text-gray-500 text-sm">Page {currentPage} of {totalPages}</span>
+
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] text-gray-400 font-bold uppercase hidden sm:inline">Press Enter to Jump</span>
+                <select 
+                  className="border-2 border-gray-200 p-1.5 rounded-lg text-sm bg-white outline-none focus:border-blue-500" 
+                  value={pageSize} 
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                >
+                  {[10, 50, 100].map((size) => (
+                    <option key={size} value={size}>{size} rows</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </>
         )}
@@ -223,10 +281,10 @@ export default function TrashedRecords() {
                   : "Warning: This action is permanent and cannot be undone."}
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmAction(null)} className="flex-1 py-2 text-sm font-bold text-gray-400">Cancel</button>
+              <button onClick={() => setConfirmAction(null)} className="flex-1 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition">Cancel</button>
               <button
                 onClick={() => confirmAction.type === "restore" ? handleRestore(confirmAction.record) : handleDelete(confirmAction.record)}
-                className={`flex-1 py-2 rounded-xl text-white text-sm font-bold ${confirmAction.type === "restore" ? "bg-emerald-600" : "bg-red-600"}`}
+                className={`flex-1 py-2 rounded-xl text-white text-sm font-bold shadow-lg transition ${confirmAction.type === "restore" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200" : "bg-red-600 hover:bg-red-700 shadow-red-200"}`}
               >
                 Confirm
               </button>

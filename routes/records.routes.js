@@ -18,7 +18,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 /* ================= 1. GET TRASHED RECORDS ================= */
-// Keep this ABOVE /:id
 router.get("/trashed", async (req, res) => {
     try {
         const [rows] = await db.query(
@@ -35,23 +34,18 @@ router.get("/trashed", async (req, res) => {
 router.delete("/:id/permanent", async (req, res) => {
     try {
         const { id } = req.params;
-        // FIX: Extract userEmail and userRole from the body
         const { userEmail, userRole } = req.body; 
         
-        // 1. Fetch info before the record is deleted
         const [record] = await db.query("SELECT accession_no, title, file_path FROM records WHERE id = ?", [id]);
         
         if (record.length === 0) return res.status(404).json({ message: "Record not found" });
 
-        // 2. Delete physical file
         if (record[0]?.file_path && fs.existsSync(record[0].file_path)) {
             fs.unlinkSync(record[0].file_path);
         }
 
-        // 3. Delete from database
         await db.query("DELETE FROM records WHERE id = ?", [id]);
 
-        // 4. Log the activity (Now userEmail is defined)
         await logActivity({
             action: "DELETE",
             recordId: id,
@@ -68,17 +62,25 @@ router.delete("/:id/permanent", async (req, res) => {
     }
 });
 
-/* ================= 3. GET ALL ACTIVE RECORDS ================= */
+/* ================= 3. GET ALL ACTIVE RECORDS (SECURED) ================= */
 router.get("/", async (req, res) => {
   try {
+    // SECURITY: Use the role from cookies to determine visibility
     const userRole = req.cookies?.role || 'guest'; 
+    
     let sql = "SELECT * FROM records WHERE status = 'active'";
-    if (userRole === 'guest') sql += " AND accessLevel != 'Private (Staff Only)'";
+    
+    // If not an admin/librarian, hide private records at the database level
+    if (userRole !== 'admin' && userRole !== 'librarian') {
+        sql += " AND accessLevel != 'Private (Staff Only)'";
+    }
+
     sql += " ORDER BY box_number ASC, title ASC"; 
 
     const [rows] = await db.query(sql);
     res.json(rows);
   } catch (err) {
+    console.error("Fetch records error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -89,7 +91,7 @@ router.post("/", upload.single("file"), async (req, res) => {
         const { userEmail, userRole, ...rawBody } = req.body;
 
         const recordData = {
-            accession_no: rawBody.accession_no || rawBody["Accession #"],
+            accession_no: rawBody.accessionNo || rawBody.accession_no || rawBody["Accession #"],
             box_number: parseInt(rawBody.box_number || rawBody["Box Number "]) || 0,
             title: rawBody.title || rawBody["Title "] || "Untitled",
             place_of_publication: rawBody.place_of_publication || rawBody["Place of Publication "],
@@ -105,8 +107,6 @@ router.post("/", upload.single("file"), async (req, res) => {
             file_path: req.file ? req.file.path : null,
             encoded_by: userEmail || "SYSTEM",
         };
-
-        
 
         const columns = Object.keys(recordData);
         const values = Object.values(recordData);
@@ -126,12 +126,17 @@ router.post("/", upload.single("file"), async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Record saved" });
     } catch (err) {
+        console.error("Save error:", err);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ 
+                message: "This Accession Number is already in use. Please use a unique number." 
+            });
+        }
         res.status(500).json({ message: "Failed to save record" });
     }
 });
 
 /* ================= 5. GET SINGLE RECORD ================= */
-// Place generic :id routes at the bottom
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -149,45 +154,43 @@ router.put("/:id", upload.single("file"), async (req, res) => {
         const { id } = req.params;
         const { userEmail, userRole, ...rawBody } = req.body;
 
-        // 1. Map frontend camelCase to database snake_case
         const updateData = {
             ...rawBody,
-            // If the frontend sends 'accessionNo', rename it to 'accession_no'
             accession_no: rawBody.accessionNo || rawBody.accession_no,
         };
 
-        // 2. Remove the camelCase version so it doesn't break the SQL query
         delete updateData.accessionNo;
-
         if (req.file) updateData.file_path = req.file.path;
 
-        // 3. FETCH OLD DATA FOR LOGGING
-        const [oldRecords] = await db.query("SELECT accession_no, title FROM records WHERE id = ?", [id]);
+        const [oldRecords] = await db.query("SELECT accession_no, title, status FROM records WHERE id = ?", [id]);
         if (oldRecords.length === 0) return res.status(404).json({ message: "Record not found" });
 
         const oldAccession = oldRecords[0].accession_no;
         const currentTitle = oldRecords[0].title;
+        const oldStatus = oldRecords[0].status;
 
-        // 4. Clean data for SQL
         const forbidden = ['userEmail', 'userRole', 'id', 'userName', 'date_encoded', 'updated_at'];
         const columns = Object.keys(updateData).filter(key => !forbidden.includes(key) && updateData[key] !== undefined);
         
         const values = columns.map(col => updateData[col]);
         const setClause = columns.map((col) => `\`${col}\` = ?`).join(", ");
 
-        // 5. EXECUTE UPDATE
         await db.query(`UPDATE records SET ${setClause} WHERE id = ?`, [...values, id]);
 
-        // 6. LOGIC FOR DESCRIPTION
         const newAccession = updateData.accession_no || oldAccession;
+        let finalAction = "MODIFY";
         let logDescription = `Updated metadata for Record with Accession No. ${newAccession}`;
 
-        if (updateData.accession_no && updateData.accession_no !== oldAccession) {
+        if (updateData.status === 'active' && oldStatus !== 'active') {
+            finalAction = "RESTORE";
+            logDescription = `Restored Record with Accession No. ${newAccession} from the trash`;
+        } 
+        else if (updateData.accession_no && updateData.accession_no !== oldAccession) {
             logDescription += ` (Changed from '${oldAccession}' to '${newAccession}')`;
         }
 
         await logActivity({
-            action: "MODIFY",
+            action: finalAction,
             recordId: id,
             title: updateData.title || currentTitle, 
             email: userEmail,
@@ -198,27 +201,29 @@ router.put("/:id", upload.single("file"), async (req, res) => {
         res.json({ message: "Update successful" });
     } catch (err) {
         console.error("Update error:", err);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ 
+                message: "This Accession Number is already in use by another record. Please use a unique number." 
+            });
+        }
         res.status(500).json({ message: "Update failed" });
     }
 });
+
 /* ================= 7. DELETE (Move to Trash) ================= */
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { userEmail, userRole, ...rawBody } = req.body;
+        const { userEmail, userRole } = req.body;
 
-        // 1. Fetch accession_no and title before updating status
         const [record] = await db.query("SELECT accession_no, title FROM records WHERE id = ?", [id]);
-        
         if (record.length === 0) return res.status(404).json({ message: "Record not found" });
 
         const accNo = record[0].accession_no;
         const title = record[0].title;
 
-        // 2. Move to trash
         await db.query("UPDATE records SET status = 'trashed' WHERE id = ?", [id]);
 
-        // 3. Log the activity
         await logActivity({
             action: "TRASH",
             recordId: id,
