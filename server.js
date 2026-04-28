@@ -20,8 +20,12 @@ const __dirname = path.dirname(__filename);
 
 // --- Middleware ---
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173", 
-  credentials: true, // IMPORTANT: Allows cookies to be sent back and forth
+  origin: [
+    'http://localhost:5173', 
+    'https://engg-lib-dir-deploy-test.vercel.app', // Your main production URL
+    'https://engg-lib-dir-deploy-test-msfl427m3.vercel.app' // This specific preview URL
+  ],
+  credentials: true
 }));
 
 app.use(express.json());
