@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "https://engg-lib-dir-deploy-test.onrender.com";
 
 export default function AccountAdministration() {
   const { user, loading: authLoading } = useAuth();

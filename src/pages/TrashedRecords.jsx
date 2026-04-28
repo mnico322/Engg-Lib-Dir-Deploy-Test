@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
-const API_URL = import.meta.env.VITE_API_URL ;
+const API_URL = "https://engg-lib-dir-deploy-test.onrender.com";
 
 export default function TrashedRecords() {
   const [records, setRecords] = useState([]);

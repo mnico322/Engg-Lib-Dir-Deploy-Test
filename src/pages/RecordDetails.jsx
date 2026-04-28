@@ -5,7 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "https://engg-lib-dir-deploy-test.onrender.com";
 
 export default function RecordDetails() {
   const { id } = useParams();
