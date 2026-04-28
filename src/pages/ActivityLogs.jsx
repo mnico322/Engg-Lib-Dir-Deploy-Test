@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
+const API_URL = "https://engg-lib-dir-deploy-test.onrender.com";
+
 export default function ActivityLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export default function ActivityLogs() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/logs", {
+      const res = await axios.get(`${API_URL}/api/logs`, {
         withCredentials: true
       });
       setLogs(Array.isArray(res.data) ? res.data : []);

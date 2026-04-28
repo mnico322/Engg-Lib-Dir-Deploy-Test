@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
+const API_URL = "https://engg-lib-dir-deploy-test.onrender.com";
+
 export default function TrashedRecords() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,11 +27,13 @@ export default function TrashedRecords() {
     setJumpPage(currentPage.toString());
   }, [currentPage]);
 
+
+
   const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
       // Ensure withCredentials is true to send the secure cookies
-      const res = await axios.get("http://localhost:5000/api/records/trashed", { 
+      const res = await axios.get(`${API_URL}/api/records/trashed`, { 
         withCredentials: true 
       });
       
@@ -61,7 +65,7 @@ export default function TrashedRecords() {
   const handleRestore = async (rec) => {
     const recordId = rec.id || rec._id;
     try {
-      await axios.put(`http://localhost:5000/api/records/${recordId}`, 
+      await axios.put(`${API_URL}/api/records/${recordId}`, 
         { status: "active" }, // We no longer send userEmail/Role in body!
         { withCredentials: true }
       );
@@ -76,7 +80,7 @@ export default function TrashedRecords() {
   const handleDelete = async (rec) => {
     const recordId = rec.id || rec._id;
     try {
-      await axios.delete(`http://localhost:5000/api/records/${recordId}/permanent`, {
+      await axios.delete(`${API_URL}/api/records/${recordId}/permanent`, {
         withCredentials: true // Cookies handle the auth now
       });
       toast.success("Record permanently deleted.");

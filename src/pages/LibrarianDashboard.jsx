@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 
+const API_URL = "https://engg-lib-dir-deploy-test.onrender.com";
+
 export default function LibrarianDashboard() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -12,7 +14,7 @@ export default function LibrarianDashboard() {
   useEffect(() => {
     const fetchRecords = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/records", { withCredentials: true });
+        const res = await axios.get(`${API_URL}/api/records`, { withCredentials: true });
         const data = Array.isArray(res.data) ? res.data : (res.data.records || []);
         // Filter out trashed items before processing
         setRecords(data.filter(r => r.status !== "trashed"));

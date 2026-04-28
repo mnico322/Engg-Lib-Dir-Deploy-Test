@@ -5,6 +5,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
+const API_URL = "https://engg-lib-dir-deploy-test.onrender.com";
+
 export default function AddRecord() {
   const navigate = useNavigate();
   const { user, loading } = useAuth(); 
@@ -58,7 +60,7 @@ export default function AddRecord() {
 
       if (file) payload.append("file", file);
 
-      await axios.post("http://localhost:5000/api/records", payload, {
+      await axios.post(`${API_URL}/api/records`, payload, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
