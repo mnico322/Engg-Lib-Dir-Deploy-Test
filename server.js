@@ -19,18 +19,36 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- Middleware ---
+
+// Use a dynamic origin check to handle all Vercel previews automatically
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://engg-lib-dir-deploy-test.vercel.app'
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'https://engg-lib-dir-deploy-test.vercel.app', // Your main production URL
-    'https://engg-lib-dir-deploy-test-msfl427m3.vercel.app' // This specific preview URL
-  ],
-  credentials: true
+  origin: function (origin, callback) {
+    // 1. Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // 2. Allow if origin is in our list OR if it's a Vercel preview link
+    const isVercelPreview = origin.endsWith('.vercel.app') && origin.includes('engg-lib-dir-deploy-test');
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || isVercelPreview) {
+      callback(null, true);
+    } else {
+      console.log("Blocked by CORS: ", origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // IMPORTANT: Allows server to read 'req.cookies'
+app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
