@@ -3,9 +3,11 @@ import { db } from "../db.js";
 import { logActivity } from "../backend/utils/logger.js";
 import multer from "multer";
 import fs from "fs";
+import path from "path"; // Added for secure file extension checking
 
 const router = express.Router();
 
+/* ================= SECURE FILE UPLOAD CONFIGURATION ================= */
 const uploadDir = "uploads/";
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
@@ -13,12 +15,49 @@ if (!fs.existsSync(uploadDir)) {
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
+    filename: (req, file, cb) => {
+        // Strip out spaces and weird characters from the original file name
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '');
+        cb(null, Date.now() + "-" + safeName);
+    },
 });
-const upload = multer({ storage });
 
+const fileFilter = (req, file, cb) => {
+    // 1. Allowed MIME types (What the browser claims the file is)
+    const allowedMimeTypes = [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "application/msword", // .doc
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" // .docx
+    ];
+
+    // 2. Allowed Extensions (What the file actually ends with)
+    const allowedExtensions = /pdf|jpg|jpeg|png|doc|docx/;
+    
+    // Check both
+    const isValidExt = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
+    const isValidMime = allowedMimeTypes.includes(file.mimetype);
+
+    if (isValidExt && isValidMime) {
+        return cb(null, true); // Accept the file
+    } else {
+        // Reject the file and throw an error
+        return cb(new Error("SECURITY_ERROR: Only PDF, Word, and Image files are allowed!"), false); 
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 15 * 1024 * 1024 // LIMIT: 15 Megabytes max per file
+    }
+});
+
+/* ================= AUTHENTICATION HELPER ================= */
 /**
- * HELPER: Get current user info from Cookies
+ * Get current user info from Cookies
  * This prevents users from sending fake roles in the request body.
  */
 const getAuthUser = (req) => {
@@ -49,7 +88,7 @@ router.get("/trashed", async (req, res) => {
 router.delete("/:id/permanent", async (req, res) => {
     try {
         const { id } = req.params;
-        const { email, role } = getAuthUser(req); // SERVER-SIDE CHECK
+        const { email, role } = getAuthUser(req);
 
         if (role !== 'admin') {
             return res.status(403).json({ message: "Only Admins can permanently delete records." });
@@ -83,7 +122,7 @@ router.delete("/:id/permanent", async (req, res) => {
 /* ================= 3. GET ALL ACTIVE RECORDS (SECURED) ================= */
 router.get("/", async (req, res) => {
   try {
-    const { role } = getAuthUser(req); // SERVER-SIDE CHECK
+    const { role } = getAuthUser(req); 
     
     let sql = "SELECT * FROM records WHERE status = 'active'";
     if (role !== 'admin' && role !== 'librarian') {
@@ -103,7 +142,7 @@ router.get("/", async (req, res) => {
 /* ================= 4. POST NEW RECORD (SECURED) ================= */
 router.post("/", upload.single("file"), async (req, res) => {
     try {
-        const { email, role } = getAuthUser(req); // SERVER-SIDE CHECK
+        const { email, role } = getAuthUser(req);
         const rawBody = req.body;
 
         if (role !== 'admin' && role !== 'librarian') {
@@ -148,6 +187,11 @@ router.post("/", upload.single("file"), async (req, res) => {
     } catch (err) {
         console.error("Save error:", err);
         if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "Duplicate Accession Number." });
+        
+        // Catch Multer errors
+        if (err.message && err.message.includes("SECURITY_ERROR")) {
+             return res.status(400).json({ message: err.message });
+        }
         res.status(500).json({ message: "Failed to save record" });
     }
 });
@@ -175,7 +219,7 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", upload.single("file"), async (req, res) => {
     try {
         const { id } = req.params;
-        const { email, role } = getAuthUser(req); // SERVER-SIDE CHECK
+        const { email, role } = getAuthUser(req); 
         const rawBody = req.body;
 
         if (role !== 'admin' && role !== 'librarian') {
@@ -216,6 +260,11 @@ router.put("/:id", upload.single("file"), async (req, res) => {
         res.json({ message: "Update successful" });
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "Duplicate Accession Number." });
+        
+        // Catch Multer errors
+        if (err.message && err.message.includes("SECURITY_ERROR")) {
+             return res.status(400).json({ message: err.message });
+        }
         res.status(500).json({ message: "Update failed" });
     }
 });
@@ -224,7 +273,7 @@ router.put("/:id", upload.single("file"), async (req, res) => {
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { email, role } = getAuthUser(req); // SERVER-SIDE CHECK
+        const { email, role } = getAuthUser(req);
 
         if (role !== 'admin' && role !== 'librarian') {
             return res.status(403).json({ message: "Unauthorized." });
