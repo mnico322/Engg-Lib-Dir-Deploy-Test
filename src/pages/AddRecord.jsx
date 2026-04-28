@@ -40,17 +40,17 @@ export default function AddRecord() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 1. Check for required fields before processing
+    // Check for required fields before processing
     if (!formData.title) return toast.error("Title is required");
-    if (!formData.accessionNo) return toast.error("Accession Number is required");
+    if (!formData.accession_no) return toast.error("Accession Number is required");
     
     setSaving(true);
 
     try {
       const payload = new FormData();
-      payload.append("userName", user?.displayName || "Nico");
-      payload.append("userRole", user?.role || "Librarian");
-      payload.append("userEmail", user?.email || "SYSTEM");
+
+      // SECURITY UPDATE: We no longer manually append user identity fields.
+      // The backend extracts 'encoded_by' and 'role' from the secure cookies.
 
       Object.entries(formData).forEach(([key, value]) => {
         if (value) payload.append(key, value);
@@ -66,6 +66,7 @@ export default function AddRecord() {
       toast.success("Record saved successfully!");
       navigate("/records");
     } catch (err) {
+      console.error("Save error:", err);
       toast.error(err.response?.data?.message || "Error saving record");
     } finally {
       setSaving(false);
@@ -75,14 +76,11 @@ export default function AddRecord() {
   if (loading) return <div className="p-10 text-center text-gray-500 font-medium">Loading Session...</div>;
   if (!user || !canEdit) return null;
 
-  // Separate fields for logical grouping (to match the View format)
-  const titleField = fieldConfig.find(f => f.name === "title");
   const gridFields = fieldConfig.filter(f => f.type !== "textarea" && f.type !== "file" && f.name !== "title");
   const textAreaFields = fieldConfig.filter(f => f.type === "textarea");
 
   return (
     <div className="p-6 max-w-5xl mx-auto animate-fadeIn">
-      {/* Header Section (Matching RecordDetails style) */}
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <button 
@@ -98,7 +96,7 @@ export default function AddRecord() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
         
-        {/* 🔹 TITLE BOX (Matching the Top Box in View) */}
+        {/* Document Title Section */}
         <div className="p-8 pb-4 border-b border-gray-100">
           <label className="text-[12px] text-gray-400 mb-2 tracking-wider block uppercase font-bold">
             Document Title <span className="text-red-500">*</span>
@@ -114,14 +112,13 @@ export default function AddRecord() {
           />
         </div>
 
-        {/* 🔹 METADATA GRID (Matching gray background grid in View) */}
+        {/* Metadata Grid */}
         <div className="p-8 bg-gray-50/50 border-b border-gray-100">
           <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6">Archive Metadata</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
             {gridFields.map((field) => (
               <div key={field.name} className="flex flex-col">
                 <label className="text-[12px] text-gray-400 mb-1 tracking-wider block uppercase font-semibold">
-                  {/* 2. Add red asterisk conditionally if it's the accession number */}
                   {field.label} {field.name === "accessionNo" && <span className="text-red-500">*</span>}
                 </label>
                 {field.type === "select" ? (
@@ -143,7 +140,6 @@ export default function AddRecord() {
                     name={field.name}
                     value={formData[field.name] || ""}
                     onChange={handleChange}
-                    // 3. Force HTML5 required validation
                     required={field.name === "accessionNo"} 
                     className="w-full bg-white border border-gray-200 rounded-lg p-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                     placeholder={`N/A`}
@@ -154,7 +150,7 @@ export default function AddRecord() {
           </div>
         </div>
 
-        {/* 🔹 CONTENT SECTIONS (Description & Abstract style) */}
+        {/* Content Sections */}
         <div className="p-8 space-y-10">
           {textAreaFields.map((field) => (
             <section key={field.name}>
@@ -171,7 +167,7 @@ export default function AddRecord() {
             </section>
           ))}
 
-          {/* 🔹 FILE UPLOAD SECTION (Matching Download button area) */}
+          {/* File Upload Section */}
           <section className="pt-6 border-t border-gray-100">
             <label className="text-[12px] text-gray-400 mb-3 tracking-wider block uppercase font-bold">
               Digital Attachment (PDF/Image)
@@ -194,7 +190,7 @@ export default function AddRecord() {
             </div>
           </section>
 
-          {/* 🔹 FORM ACTIONS */}
+          {/* Form Actions */}
           <div className="pt-6 flex flex-col md:flex-row justify-end gap-4">
             <button
               disabled={saving}

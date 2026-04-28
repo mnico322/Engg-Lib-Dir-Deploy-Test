@@ -10,7 +10,7 @@ const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 const validatePassword = (password) => password && password.length >= 6;
 const validateDisplayName = (name) => name && name.trim().length > 0;
 
-/* ================= LOGIN ================= */
+/* ================= LOGIN (SECURED) ================= */
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
@@ -28,7 +28,7 @@ router.post("/login", async (req, res) => {
 
     const user = rows[0];
 
-    // 🔥 RE-ENABLED: This prevents unapproved users from getting a session
+    // Check Approval Status
     if (Number(user.approved) !== 1) {
       return res.status(403).json({ message: "Your account is pending admin approval." });
     }
@@ -44,15 +44,25 @@ router.post("/login", async (req, res) => {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret, { expiresIn: "1d" });
+    // Create JWT
+    const token = jwt.sign({ id: user.id, role: user.role, email: user.email }, jwtSecret, { expiresIn: "1d" });
 
-    // Set cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Only true in production
+    // --- SECURITY UPGRADE: Set cookies ---
+    const cookieOptions = {
+      httpOnly: true, // Prevents JavaScript access
+      secure: process.env.NODE_ENV === "production", 
       sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    };
+
+    // Store the main Auth token
+    res.cookie("token", token, cookieOptions);
+
+    // Store the role and email so records.routes.js can read them easily
+    // We do NOT set these to httpOnly: false because the backend needs to read them, 
+    // but we don't want the frontend to easily mess with them.
+    res.cookie("role", user.role, cookieOptions);
+    res.cookie("userEmail", user.email, cookieOptions);
 
     res.json({
       user: {
@@ -70,7 +80,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/* ================= GET CURRENT USER ================= */
+/* ================= GET CURRENT USER (SECURED) ================= */
 router.get("/me", async (req, res) => {
   try {
     const token = req.cookies?.token;
@@ -79,7 +89,6 @@ router.get("/me", async (req, res) => {
     const jwtSecret = process.env.JWT_SECRET;
     const decoded = jwt.verify(token, jwtSecret);
 
-    // ✅ Make sure we fetch the 'approved' status here too
     const [rows] = await db.query(
       "SELECT id, displayName, email, role, approved FROM users WHERE id = ?",
       [decoded.id]
@@ -87,9 +96,10 @@ router.get("/me", async (req, res) => {
 
     if (rows.length === 0) return res.status(401).json({ message: "User not found" });
     
-    // Safety check: if user was revoked/unapproved since they logged in
     if (Number(rows[0].approved) !== 1) {
        res.clearCookie("token");
+       res.clearCookie("role");
+       res.clearCookie("userEmail");
        return res.status(403).json({ message: "Account no longer approved" });
     }
 
@@ -100,9 +110,11 @@ router.get("/me", async (req, res) => {
   }
 });
 
-/* ================= LOGOUT ================= */
+/* ================= LOGOUT (CLEARS ALL) ================= */
 router.post("/logout", (req, res) => {
   res.clearCookie("token", { httpOnly: true, sameSite: "lax" });
+  res.clearCookie("role", { httpOnly: true, sameSite: "lax" });
+  res.clearCookie("userEmail", { httpOnly: true, sameSite: "lax" });
   res.json({ message: "Logged out successfully" });
 });
 
@@ -124,7 +136,6 @@ router.post("/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Initial role is 'user', approved is 0
     await db.query(
       "INSERT INTO users (displayName, email, password, role, approved) VALUES (?, ?, ?, ?, ?)",
       [displayName, email, hashedPassword, "user", 0]

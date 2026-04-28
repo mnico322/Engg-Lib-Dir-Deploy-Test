@@ -5,16 +5,25 @@ const router = express.Router();
 
 router.get("/stats", async (req, res) => {
   try {
-    // 1. Total Active Records (using the 'status' column we found)
+    // SECURITY CHECK: Use the secure cookie we created in the Auth fix
+    const userRole = req.cookies?.role;
+
+    // BLOCK anyone who isn't an admin
+    // Even if a Librarian tries to call this API directly, the server will stop them here.
+    if (userRole !== 'admin') {
+      return res.status(403).json({ message: "Access denied. Admin privileges required." });
+    }
+
+    // 1. Total Active Records
     const [activeRows] = await db.query("SELECT COUNT(*) as total FROM records WHERE status = 'active'");
     
     // 2. Total Users
     const [userRows] = await db.query("SELECT COUNT(*) as total FROM users");
 
-    // 3. Items in Trash (using the 'status' column)
+    // 3. Items in Trash
     const [trashRows] = await db.query("SELECT COUNT(*) as total FROM records WHERE status = 'trashed'");
 
-    console.log("Stats update successful:", { 
+    console.log("Admin stats requested by authorized user:", { 
       active: activeRows[0].total, 
       users: userRows[0].total, 
       trash: trashRows[0].total 

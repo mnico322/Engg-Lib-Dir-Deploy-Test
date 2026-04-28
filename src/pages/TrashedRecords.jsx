@@ -20,7 +20,7 @@ export default function TrashedRecords() {
   // State for the jump-to-page input
   const [jumpPage, setJumpPage] = useState("1");
 
-  // Sync jumpPage input when currentPage changes via Prev/Next
+  // Sync jumpPage input when currentPage changes
   useEffect(() => {
     setJumpPage(currentPage.toString());
   }, [currentPage]);
@@ -28,14 +28,23 @@ export default function TrashedRecords() {
   const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
+      // Ensure withCredentials is true to send the secure cookies
       const res = await axios.get("http://localhost:5000/api/records/trashed", { 
         withCredentials: true 
       });
-      const data = res.data?.records || res.data || [];
-      setRecords(Array.isArray(data) ? data : []);
+      
+      // FIXED: The backend returns the array directly now. 
+      // We check if res.data is the array itself.
+      const data = Array.isArray(res.data) ? res.data : (res.data?.records || []);
+      setRecords(data);
     } catch (err) {
       console.error("Error fetching trashed records:", err);
-      toast.error("Failed to load trashed records.");
+      // If backend returns 403, it means the cookie check failed
+      if (err.response?.status === 403) {
+        toast.error("Access Denied: Admins/Librarians only.");
+      } else {
+        toast.error("Failed to load trashed records.");
+      }
     } finally {
       setLoading(false);
     }
@@ -53,11 +62,7 @@ export default function TrashedRecords() {
     const recordId = rec.id || rec._id;
     try {
       await axios.put(`http://localhost:5000/api/records/${recordId}`, 
-        { 
-          status: "active",
-          userEmail: user?.email, 
-          userRole: user?.role 
-        }, 
+        { status: "active" }, // We no longer send userEmail/Role in body!
         { withCredentials: true }
       );
       toast.success("Record restored successfully.");
@@ -72,17 +77,13 @@ export default function TrashedRecords() {
     const recordId = rec.id || rec._id;
     try {
       await axios.delete(`http://localhost:5000/api/records/${recordId}/permanent`, {
-        data: { 
-          userEmail: user?.email, 
-          userRole: user?.role 
-        },
-        withCredentials: true 
+        withCredentials: true // Cookies handle the auth now
       });
       toast.success("Record permanently deleted.");
       setConfirmAction(null);
       fetchRecords();
     } catch (err) {
-      toast.error("Failed to permanently delete.");
+      toast.error(err.response?.data?.message || "Failed to permanently delete.");
     }
   };
 
@@ -92,13 +93,13 @@ export default function TrashedRecords() {
 
     switch (searchCategory) {
       case "accession_no":
-        return (rec.accession_no || "").toLowerCase().includes(term);
+        return (rec.accession_no || "").toString().toLowerCase().includes(term);
       case "updated_at":
         const dateStr = rec.updated_at ? new Date(rec.updated_at).toLocaleDateString() : "";
         return dateStr.toLowerCase().includes(term);
       case "title":
       default:
-        return (rec.title || rec.name || "").toLowerCase().includes(term);
+        return (rec.title || rec.name || "").toString().toLowerCase().includes(term);
     }
   });
   
@@ -122,7 +123,6 @@ export default function TrashedRecords() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* CSS to remove number arrows */}
       <style>{`
         .no-spinner::-webkit-inner-spin-button,
         .no-spinner::-webkit-outer-spin-button {
@@ -134,7 +134,6 @@ export default function TrashedRecords() {
         }
       `}</style>
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
         <h1 className="text-2xl font-bold text-gray-800">Trash Bin</h1>
         
@@ -217,7 +216,6 @@ export default function TrashedRecords() {
               </tbody>
             </table>
 
-            {/* Pagination Controls with Jump Input */}
             <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <button
@@ -252,7 +250,7 @@ export default function TrashedRecords() {
               </div>
 
               <div className="flex items-center gap-4">
-                <span className="text-[10px] text-gray-400 font-bold uppercase hidden sm:inline">Press Enter to Jump</span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase hidden sm:inline italic">Press Enter to Jump</span>
                 <select 
                   className="border-2 border-gray-200 p-1.5 rounded-lg text-sm bg-white outline-none focus:border-blue-500" 
                   value={pageSize} 
