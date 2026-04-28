@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -17,12 +19,12 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const recordsRes = await axios.get("http://localhost:5000/api/records", { withCredentials: true });
+        const recordsRes = await axios.get(`${API_URL}/api/records`, { withCredentials: true });
         const recordsData = Array.isArray(recordsRes.data) ? recordsRes.data : (recordsRes.data.records || []);
         setRecords(recordsData.filter(r => r.status !== "trashed"));
 
         if (isAdmin) {
-          const statsRes = await axios.get("http://localhost:5000/api/admin/stats", { withCredentials: true });
+          const statsRes = await axios.get(`${API_URL}/api/admin/stats`, { withCredentials: true });
           setStats(statsRes.data);
         }
       } catch (err) {

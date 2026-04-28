@@ -50,8 +50,8 @@ router.post("/login", async (req, res) => {
     // --- SECURITY UPGRADE: Set cookies ---
     const cookieOptions = {
       httpOnly: true, // Prevents JavaScript access
-      secure: process.env.NODE_ENV === "production", 
-      sameSite: "lax",
+      secure: true, 
+      sameSite: "none",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     };
 

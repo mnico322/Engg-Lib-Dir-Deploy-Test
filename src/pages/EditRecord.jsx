@@ -5,6 +5,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL ;
+
 export default function EditRecord() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -18,10 +20,12 @@ export default function EditRecord() {
   const role = userData?.role || "guest";
   const canEdit = ["admin", "librarian"].includes(role);
 
+  
+
   useEffect(() => {
     const fetchExistingData = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/records/${id}`, { withCredentials: true });
+        const res = await axios.get(`${API_URL}/api/records/${id}`, { withCredentials: true });
         setFormData(res.data);
       } catch (err) {
         console.error(err);
@@ -65,7 +69,7 @@ export default function EditRecord() {
 
       if (file) payload.append("file", file);
 
-      await axios.put(`http://localhost:5000/api/records/${id}`, payload, {
+      await axios.put(`${API_URL}/api/records/${id}`, payload, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });

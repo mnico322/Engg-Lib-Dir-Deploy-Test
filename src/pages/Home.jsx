@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Home() {
   const { user, userData, currentUser } = useAuth();
   const loggedInUser = user || userData || currentUser; 
@@ -13,12 +15,14 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCategory, setSearchCategory] = useState("title");
 
+
+
   useEffect(() => {
     const fetchPublicRecords = async () => {
       try {
         // SECURITY: The backend route is now secured. It will only return
         // records the user is authorized to see based on their session/role.
-        const res = await axios.get("http://localhost:5000/api/records", { withCredentials: true });
+        const res = await axios.get(`${API_URL}/api/records`, { withCredentials: true });
         
         // No more manual filtering here! The server only sends authorized data.
         setRecords(res.data);

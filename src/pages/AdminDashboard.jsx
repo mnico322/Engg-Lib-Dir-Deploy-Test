@@ -3,6 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL ;
+
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ export default function AdminDashboard() {
     // 2. FETCH STATS: Only run if user is confirmed admin
     const fetchStats = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/admin/stats", { withCredentials: true });
+        const res = await axios.get(`${API_URL}/api/admin/stats`, { withCredentials: true });
         setStats(res.data);
       } catch (err) {
         console.error("Stats error:", err);

@@ -28,7 +28,7 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `activity_logs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL,
   `firebaseId` varchar(255) DEFAULT NULL,
   `action` varchar(50) DEFAULT NULL,
   `recordFirebaseId` varchar(255) DEFAULT NULL,
@@ -39,8 +39,7 @@ CREATE TABLE `activity_logs` (
   `user` varchar(255) DEFAULT NULL,
   `role` varchar(50) DEFAULT NULL,
   `description` text DEFAULT NULL,
-  `timestamp` datetime DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  `timestamp` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -592,7 +591,7 @@ INSERT INTO `activity_logs` (`id`, `firebaseId`, `action`, `recordFirebaseId`, `
 --
 
 CREATE TABLE `records` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL,
   `accession_no` varchar(100) DEFAULT NULL,
   `box_number` varchar(50) DEFAULT NULL,
   `title` text DEFAULT NULL,
@@ -609,8 +608,7 @@ CREATE TABLE `records` (
   `file_path` varchar(255) DEFAULT NULL,
   `date_encoded` timestamp NOT NULL DEFAULT current_timestamp(),
   `encoded_by` varchar(255) DEFAULT 'System',
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`)
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -2351,6 +2349,23 @@ INSERT INTO `users` (`id`, `firebaseId`, `email`, `password`, `role`, `displayNa
 --
 -- Indexes for table `activity_logs`
 --
+ALTER TABLE `activity_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `firebaseId` (`firebaseId`);
+
+--
+-- Indexes for table `records`
+--
+ALTER TABLE `records`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`),
+  ADD UNIQUE KEY `firebaseId` (`firebaseId`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -2359,6 +2374,20 @@ INSERT INTO `users` (`id`, `firebaseId`, `email`, `password`, `role`, `displayNa
 --
 -- AUTO_INCREMENT for table `activity_logs`
 --
+ALTER TABLE `activity_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=570;
+
+--
+-- AUTO_INCREMENT for table `records`
+--
+ALTER TABLE `records`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2068;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

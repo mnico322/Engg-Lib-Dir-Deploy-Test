@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import toast from "react-hot-toast";
 
+const API_URL = import.meta.env.VITE_API_URL ;
+
 export default function RecordsPage() {
   const [records, setRecords] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -27,10 +29,12 @@ export default function RecordsPage() {
   const role = user?.role || "guest";
   const canEdit = ["admin", "librarian"].includes(role);
 
+
+
   const fetchRecords = async () => {
     try {
       // SECURITY: withCredentials ensures the secure token cookie is sent
-      const res = await axios.get("http://localhost:5000/api/records", { withCredentials: true });
+      const res = await axios.get(`${API_URL}/api/records`, { withCredentials: true });
       setRecords(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Failed to fetch records:", err);
@@ -52,7 +56,7 @@ export default function RecordsPage() {
       return;
     }
     try {
-      const res = await axios.get(`http://localhost:5000/api/records/${rec.id}/file`, { 
+      const res = await axios.get(`${API_URL}/api/records/${rec.id}/file`, { 
         responseType: "blob", 
         withCredentials: true 
       });
@@ -72,7 +76,7 @@ export default function RecordsPage() {
     try {
       // SECURITY UPDATE: We removed 'data' containing userEmail/userRole.
       // The backend now identifies the user and their permissions via the secure cookie.
-      await axios.delete(`http://localhost:5000/api/records/${id}`, {
+      await axios.delete(`${API_URL}/api/records/${id}`, {
         withCredentials: true
       });
       toast.success("Moved to trash!");

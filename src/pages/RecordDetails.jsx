@@ -5,6 +5,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function RecordDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -15,10 +17,12 @@ export default function RecordDetails() {
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  
+
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/records/${id}`, {
+        const res = await axios.get(`${API_URL}/api/records/${id}`, {
           withCredentials: true,
         });
         setRecord(res.data);
@@ -102,7 +106,7 @@ export default function RecordDetails() {
           <div className="pt-6 border-t border-gray-100 flex justify-center md:justify-end">
             {record.file_path ? (
               <a 
-                href={`http://localhost:5000/${record.file_path}`} 
+                href={`${API_URL}/${record.file_path}`} 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-full md:w-auto bg-orange-600 text-white px-10 py-4 rounded-xl font-bold shadow-lg hover:bg-orange-700 transition-all flex items-center justify-center gap-3"

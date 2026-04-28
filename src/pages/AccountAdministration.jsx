@@ -5,6 +5,8 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function AccountAdministration() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ export default function AccountAdministration() {
   const fetchUsers = async () => {
     try {
       // SECURITY: withCredentials sends the secure cookies to the backend
-      const res = await axios.get("http://localhost:5000/api/users", {
+      const res = await axios.get(`${API_URL}/api/users`, {
         params: { searchTerm, filterRole },
         withCredentials: true,
       });
@@ -62,7 +64,7 @@ export default function AccountAdministration() {
   const handleApprove = async (id) => {
     try {
       // Backend checks the session cookie to see if YOU are an admin before allowing this patch
-      await axios.patch(`http://localhost:5000/api/users/${id}/approve`, {}, { withCredentials: true });
+      await axios.patch(`${API_URL}/api/users/${id}/approve`, {}, { withCredentials: true });
       setUsers(prev => prev.map(u => u.id === id ? { ...u, approved: 1 } : u)); 
       toast.success("User approved!");
     } catch (err) {
@@ -78,7 +80,7 @@ export default function AccountAdministration() {
 
   const confirmRoleChange = async () => {
     try {
-      await axios.patch(`http://localhost:5000/api/users/${selectedUser.id}/role`, 
+      await axios.patch(`${API_URL}/api/users/${selectedUser.id}/role`, 
         { role: newRole }, 
         { withCredentials: true }
       );
@@ -94,7 +96,7 @@ export default function AccountAdministration() {
   const confirmDelete = async () => {
     try {
       // If the Librarian tries to call this, the backend will stop them because their 'role' cookie isn't 'admin'
-      await axios.delete(`http://localhost:5000/api/users/${userToDelete.id}`, { withCredentials: true });
+      await axios.delete(`${API_URL}/api/users/${userToDelete.id}`, { withCredentials: true });
       setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
       toast.success("User deleted.");
     } catch (err) {
